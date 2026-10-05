@@ -113,10 +113,10 @@ window.MathJax = {
 <p><strong>\(e\)</strong> is the common annual efficiency improvement and <strong>\(\rho\)</strong> is the commodity tier's relative compute intensity. This keeps the old efficiency channel while allowing cheaper models to use less compute per service.</p>
 
 <div class="model-section-label">Capability, progress, and catch-up</div>
-<p><strong>\(g\in[0,1]\)</strong> remains continuous frontier pace: 1 is full progress and 0 is a full pause. Frontier capability/value <strong>\(V_F\)</strong> grows with progress. Commodity value <strong>\(V_C\)</strong> starts below it and receives existing frontier capability with a lag:</p>
+<p><strong>\(g\in[0,1]\)</strong> remains continuous frontier pace: 1 is full progress and 0 is a full pause. Frontier capability/value <strong>\(V_F\)</strong> grows with progress. Commodity value <strong>\(V_C\)</strong> starts below it and catches up toward each scenario’s moving frontier with a lag:</p>
 <div class="eq">\[V_{F,t}=V_{F,0}(1+\phi g)^t,\qquad V_{C,0}=1,\]</div>
 <div class="eq">\[V_{C,t+1}=V_{C,t}+d(g)(V_{F,t}-V_{C,t}),\qquad d(g)=1-2^{-[1+a(1-g)]/h_C}.\]</div>
-<p><strong>\(V_{F,0}\)</strong> is the initial frontier value premium, <strong>\(\phi\)</strong> is annual frontier value growth at full pace, and <strong>\(h_C\)</strong> is the catch-up half-life at full pace. Commodity models improve even at \(g=1\). Their catch-up half-life is \(h_C/[1+a(1-g)]\). The baseline \(h_C=0.5\) year is a loose timing proxy, while \(a=1\) assumes a pause doubles the catch-up rate. Set \(a=0\) to remove that additional pacing effect. The markup half-life \(h\) is independent: capability benchmarks do not measure profit-margin decay. A pause diffuses the existing frontier; it does not give commodity models capabilities that have not yet been created.</p>
+<p><strong>\(V_{F,0}\)</strong> is the initial frontier value premium, <strong>\(\phi\)</strong> is annual frontier value growth at full pace, and <strong>\(h_C\)</strong> is the catch-up half-life at full pace. Commodity models improve even at \(g=1\). Their catch-up half-life is \(h_C/[1+a(1-g)]\). The baseline \(h_C=0.5\) year is a loose timing proxy, while \(a=1\) assumes a full pause halves the catch-up half-life. Set \(a=0\) to remove that additional pacing effect. The markup half-life \(h\) is independent: capability benchmarks do not measure profit-margin decay. Lower pace accelerates relative catch-up toward a frontier that grows more slowly. Faster relative catch-up need not mean higher absolute commodity capability.</p>
 <p>The existing markup rule is preserved:</p>
 <div class="eq">\[\mu_{F,t}(g)=\mu_{F,0}\left[g+(1-g)2^{-t/h}\right].\]</div>
 <p>Full progress continually renews the frontier markup. Under a pause the initial markup decays; intermediate pace lies between those cases. This is a reduced-form pricing rule rather than a strategic pricing game.</p>
@@ -241,7 +241,6 @@ const META=[
 ];
 const PRESETS={
  baseline:{label:'Evidence-informed two-tier baseline',p:{}},
- illustrative:{label:'Previous illustrative baseline',p:{priceSensitivity:1.3,frontierMarkup:.25,catchupHalfLife:1}},
  diffusion:{label:'Affordability / diffusion stress case',p:{priceSensitivity:2.1,diffusionGrowth:.60,frontierDemandGrowth:0,trainingShare:.03,supplyElasticity:1.8,frontierMarkup:.40,commodityComputeRatio:.85,efficiency:.05,catchupHalfLife:1}},
  risk:{label:'Frontier-dependence stress case',p:{priceSensitivity:.9,diffusionGrowth:.25,frontierDemandGrowth:.25,trainingShare:.50,supplyElasticity:.6,frontierMarkup:.32,markupHalfLife:3,catchupHalfLife:3,initialFrontierValue:2,commodityComputeRatio:.4}}
 };
@@ -263,7 +262,7 @@ const $=id=>document.getElementById(id),clamp=(x,a,b)=>Math.max(a,Math.min(b,x))
 let ranges=Object.fromEntries(META.map(m=>[m.key,[...m.range]])),vary=Object.fromEntries(META.map(m=>[m.key,!['discount','economicLife','buildCost','investResponse'].includes(m.key)]));
 function invalidateSweep(){
  $('sweepResults').classList.add('hidden');
- $('sweepStatus').textContent='Illustrative triangular parameter draws, not estimated probabilities or confidence intervals. Run again after changing assumptions or ranges.';
+ $('sweepStatus').textContent='Assumed triangular parameter draws, not estimated probabilities or confidence intervals. Run again after changing assumptions or ranges.';
 }
 function renderControls(){
  $('presets').innerHTML=Object.entries(PRESETS).map(([k,x])=>`<button data-preset="${k}" class="${k===active?'active':''}">${x.label}</button>`).join('');
@@ -293,7 +292,7 @@ function initScenario(){
 function effect(x){return Math.abs(x)<.05?'essentially unchanged':`${Math.abs(x).toFixed(1)}% ${x>0?'higher':'lower'}`}
 function render(){
  result=compare(params);const s=result.summary,r=result.ref.at(-1),a=result.alt.at(-1),pace=fmt(params.pace*100,params.pace*100%1?1:0);
- $('resultStatus').textContent=active==='baseline'?'Result · evidence-informed scenario':active==='illustrative'?'Result · previous illustrative scenario':active?'Result · mechanism stress case':'Result · custom assumptions';
+ $('resultStatus').textContent=active==='baseline'?'Result · evidence-informed scenario':active?'Result · mechanism stress case':'Result · custom assumptions';
  $('scenarioLabel').textContent=`${pace}% pace · ${params.horizon} years`;$('altLegend').textContent=`${pace}% pace`;
  $('resultNote').innerHTML=`At <strong>${pace}% frontier pace</strong>, compared with full progress in year ${params.horizon}, total AI usage is <strong>${effect(s.usage)}</strong>. Compute-supplier revenue is <strong>${effect(s.revenue)}</strong>, and cumulative new investment is <strong>${effect(s.investment)}</strong>. Frontier usage is ${effect(s.frontierUsage)}; commodity usage is ${effect(s.commodityUsage)}.`;
  $('resultSecondary').textContent=`Frontier / commodity prices in year ${params.horizon} are ${fmt(a.PF,3)} / ${fmt(a.PC,3)}, versus ${fmt(r.PF,3)} / ${fmt(r.PC,3)} at full pace (normalized price units). Commodity share among AI users is ${fmt(100*(1-a.frontierShare))}% versus ${fmt(100*(1-r.frontierShare))}% (${signed(s.commodityShareChange)} percentage points). Both scenarios get the same ordinary adoption growth. Capability catch-up favors commodity service, while a lower frontier markup makes frontier service more attractive; the net mix and investment effect depend on the assumptions.`;
@@ -357,7 +356,7 @@ function renderCalibration(){
  <tr><td>AI share of opportunities</td><td>${fmt(100*base.participation,1)}%</td><td>${fmt(100*now.participation,1)}%</td><td>Outside-option assumption, not the percentage of businesses using AI.</td></tr>
  <tr><td>Catch-up half-life, full pace / pause</td><td>${fmt(base.catchupYears,2)} / ${fmt(base.pausedCatchupYears,2)} yr</td><td>${fmt(now.catchupYears,2)} / ${fmt(now.pausedCatchupYears,2)} yr</td><td>Timing proxy plus an unmeasured pause effect; markup half-life is independently controlled.</td></tr>
  </tbody></table></div>
- <p><strong>Reading the estimates:</strong> the first preset is a reproducible, evidence-informed scenario. The previous illustrative preset preserves the earlier experiment; the other presets are mechanism stress cases, not confidence bounds or observed economies. Sensitivity uses broad, independently drawn assumption ranges. Its frequencies do not represent the probability that pacing raises investment. Price-gap and elasticity matches are baseline checks; changing assumptions can break them, as the live column shows. Establishing a fitted market-wide forecast would require tier-specific task volumes, effective prices, physical compute, participation data, and evidence about a deliberate pacing intervention.</p>`;
+ <p><strong>Reading the estimates:</strong> the first preset is a reproducible, evidence-informed scenario. The other presets are mechanism stress cases, not confidence bounds or observed economies. Sensitivity uses broad, independently drawn assumption ranges. Its frequencies do not represent the probability that pacing raises investment. Price-gap and elasticity matches are baseline checks; changing assumptions can break them, as the live column shows. Establishing a fitted market-wide forecast would require tier-specific task volumes, effective prices, physical compute, participation data, and evidence about a deliberate pacing intervention.</p>`;
 }
 function buildEvidence(){
  const n=Object.fromEntries(SOURCES.map((s,i)=>[s.id,i+1])),refs=m=>m.sources?.length?m.sources.map(id=>`<a href="#ref-${id}">[${n[id]}]</a>`).join(' '):'<span class="muted">Model assumption</span>';
