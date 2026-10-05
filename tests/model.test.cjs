@@ -39,6 +39,22 @@ function verify(p){
  return result;
 }
 for(const pace of [0,.25,.5,.75,1])verify({...a.DEF,pace});
+// Pacing compares moving frontiers, with all four channels acting together.
+const paced=a.path(a.DEF,.5),full=a.path(a.DEF,1),paused=a.path(a.DEF,0);
+checks+=3;assert.ok(a.catchupRate(a.DEF,0)>a.catchupRate(a.DEF,.5));
+assert.ok(a.catchupRate(a.DEF,.5)>a.catchupRate(a.DEF,1));
+assert.ok(full.at(-1).VC>a.DEF.initialFrontierValue,'Commodity must follow newly created frontier capability');
+for(let t=1;t<full.length;t++){
+ checks+=4;assert.ok(paused[t].VF<paced[t].VF&&paced[t].VF<full[t].VF);
+ assert.ok(paused[t].muF<paced[t].muF&&paced[t].muF<full[t].muF);
+ assert.ok(paused[t].T<paced[t].T&&paced[t].T<full[t].T);
+ assert.ok(1-paused[t].muF/paused[0].muF>1-paced[t].muF/paced[0].muF);
+ near(paced[t].VF/paced[t-1].VF,1+a.DEF.frontierDemandGrowth*.5);
+ near(full[t].VF/full[t-1].VF,1+a.DEF.frontierDemandGrowth);
+ near(paused[t].VF,a.DEF.initialFrontierValue);
+ near(paced[t].T/full[t].T,.5);
+ near(paced[t].M,full[t].M);
+}
 const identical=verify({...a.DEF,pace:1});for(const value of Object.values(identical.summary))near(value,0);
 const symmetrical={...a.DEF,initialFrontierValue:1,frontierDemandGrowth:0,frontierMarkup:0,commodityComputeRatio:1,trainingShare:0};
 const symmetry=verify(symmetrical);for(const r of symmetry.alt)near(r.QF,r.QC);near(symmetry.summary.investment,0);
@@ -59,6 +75,8 @@ for(let t=0;t<5;t++){slow+=a.catchupRate(fixed,1)*(fixed.initialFrontierValue-sl
 checks++;assert.ok(fast>slow);checks++;assert.ok(a.muFrontier(5,0,a.DEF)<a.muFrontier(5,1,a.DEF));
 const positive=verify({...a.DEF,...a.PRESETS.diffusion.p}),negative=verify({...a.DEF,...a.PRESETS.risk.p});
 checks+=3;assert.ok(positive.summary.investment>1);assert.ok(negative.summary.investment<-1);assert.ok(negative.summary.commodityShareChange>0);
+const positiveMoving=verify({...a.DEF,...a.PRESETS.diffusion.p,frontierDemandGrowth:.02});
+checks+=2;assert.ok(positiveMoving.summary.investment>1);assert.ok(positiveMoving.alt.at(-1).VF<positiveMoving.ref.at(-1).VF);
 const close=verify({...a.DEF,pace:.500001});near(close.summary.investment,a.compare(a.DEF).summary.investment,1e-4);
 const random=a.rng(731),corners=['min','max'];
 for(const edge of corners){const p={...a.DEF,horizon:15};for(const m of a.META)p[m.key]=m[edge];verify(p)}
