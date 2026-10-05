@@ -2,7 +2,7 @@
 
 The canonical source is `index.html`, imported from the user's downloaded `ai_compute_lab.html` on October 4, 2026. It is a standalone HTML/CSS/JavaScript site with MathJax equation rendering. No dependency install or build is needed.
 
-`index.html` is the evidence-informed 1-price model and default main page. `two-tier.html` is the 2-price model. Keep the 1-price demand equation, parameter meanings, presets, and evidence table intact unless explicitly asked to change them. Navigation links between the two pages must remain available on desktop and mobile. The experimental model's tests are in `tests/model.test.cjs`.
+`main` contains the 1-price model and publishes it as the live site. The complete 2-price model, explanations, sources, and tests are saved on the remote `two-price-model` branch. Keep that work on its branch unless the user explicitly asks to publish it. Preserve the 1-price model’s equations, assumptions, presets, evidence, and layout unless a requested change requires otherwise.
 
 - Use descriptive model names: “1-price model” and “2-price model.” Public explanations must describe current assumptions and equations directly, without references to development history, earlier versions, or the conversation that produced them.
 - Preserve the user's equations, assumptions, evidence references, and visual layout unless the requested change calls for updating them. Distinguish economic changes from presentation changes.
