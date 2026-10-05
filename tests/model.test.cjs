@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-const file=process.argv[2]||path.join(__dirname,'..','index.html');
+const file=process.argv[2]||path.join(__dirname,'..','two-tier.html');
 const html=fs.readFileSync(file,'utf8'),script=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];
 const context={};vm.createContext(context);
 vm.runInContext(script.slice(0,script.indexOf("$('runSweep').onclick"))+';globalThis.api={DEF,META,PRESETS,COST,normalization,choiceShares,demandAtPrice,catchupRate,muFrontier,path,compare,cumulativeInvestment,chartAxis,chartTick,investmentNote,rng,tri};',context);
