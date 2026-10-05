@@ -2,9 +2,18 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const file=process.argv[2]||path.join(__dirname,'..','two-tier.html');
 const html=fs.readFileSync(file,'utf8'),script=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];
 const context={};vm.createContext(context);
-vm.runInContext(script.slice(0,script.indexOf("$('runSweep').onclick"))+';globalThis.api={DEF,META,PRESETS,COST,normalization,choiceShares,demandAtPrice,catchupRate,muFrontier,path,compare,cumulativeInvestment,chartAxis,chartTick,investmentNote,rng,tri};',context);
+vm.runInContext(script.slice(0,script.indexOf("$('runSweep').onclick"))+';globalThis.api={DEF,META,PRESETS,SOURCES,COST,normalization,choiceShares,demandAtPrice,catchupRate,muFrontier,path,compare,cumulativeInvestment,chartAxis,chartTick,investmentNote,calibrationMoments,rng,tri};',context);
 const a=context.api;let checks=0;
 function near(x,y,tol=1e-8){checks++;assert.ok(Math.abs(x-y)<=tol*Math.max(1,Math.abs(x),Math.abs(y)),`${x} != ${y}`)}
+// Research moments are conditional proxy matches, not estimated market-wide demand.
+const moments=a.calibrationMoments(a.DEF);
+near(moments.priceRatio,3);near(moments.frontierElasticity,-1.11,.01);
+near(moments.aggregateElasticity,-a.DEF.priceSensitivity*(1-moments.participation));
+near(moments.pausedCatchupYears,a.DEF.catchupHalfLife/(1+a.DEF.pacingCatchupBoost));
+near(a.catchupRate({...a.DEF,pacingCatchupBoost:0},0),a.catchupRate({...a.DEF,pacingCatchupBoost:0},1));
+near(a.catchupRate({...a.DEF,markupHalfLife:4},.5),a.catchupRate(a.DEF,.5));
+near(a.muFrontier(2,.5,{...a.DEF,catchupHalfLife:2}),a.muFrontier(2,.5,a.DEF));
+for(const m of a.META){checks+=2;assert.ok(a.DEF[m.key]>=m.range[0]&&a.DEF[m.key]<=m.range[1]);assert.ok(m.sources.every(id=>a.SOURCES.some(s=>s.id===id)))}
 function verify(p){
  const result=a.compare(p),norm=a.normalization(p);
  near(result.ref[0].Q,1);near(result.ref[0].pk,a.COST.computeReference);
@@ -39,6 +48,12 @@ const dt=1e-6,changed=a.choiceShares(.9*Math.exp(dt),.6,1.5,1,1,1.3);
 near(Math.log(changed.sF/original.sF)/dt,-1.3*(1-original.sF),1e-5);
 const sharedRise=a.choiceShares(.9*Math.exp(dt),.6*Math.exp(dt),1.5,1,1,1.3);
 near(Math.log((sharedRise.sF+sharedRise.sC)/(original.sF+original.sC))/dt,-1.3*original.s0,1e-5);
+for(const outside of [.25,1,4]){
+ const base=a.choiceShares(.9,.6,1.5,1,1,1.4,outside),rise=a.choiceShares(.9*Math.exp(dt),.6*Math.exp(dt),1.5,1,1,1.4,outside);
+ near(Math.log((rise.sF+rise.sC)/(base.sF+base.sC))/dt,-1.4*base.s0,1e-5);
+ near(base.sF/base.sC,1.5*(.9/.6)**-1.4);
+}
+const reluctant=a.choiceShares(.9,.6,1.5,1,1,1.3,4);checks++;assert.ok(reluctant.s0>original.s0);
 const fixed={...a.DEF,frontierDemandGrowth:0};let slow=1,fast=1;
 for(let t=0;t<5;t++){slow+=a.catchupRate(fixed,1)*(fixed.initialFrontierValue-slow);fast+=a.catchupRate(fixed,0)*(fixed.initialFrontierValue-fast)}
 checks++;assert.ok(fast>slow);checks++;assert.ok(a.muFrontier(5,0,a.DEF)<a.muFrontier(5,1,a.DEF));
