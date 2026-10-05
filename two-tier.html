@@ -83,7 +83,7 @@ window.MathJax = {
 <div class="notebook-cell inputs-cell">
 <div class="cell-label">Inputs</div>
 <div class="cell-body">
-<div class="preset-row"><div><strong>Assumption preset</strong><div class="small muted">Research baseline and stress cases reset economic assumptions, while frontier pace and horizon remain your scenario choices.</div></div><div class="preset-buttons" id="presets"></div></div>
+<div class="preset-row"><div><strong>Assumption preset</strong><div class="small muted">Presets reset economic assumptions; frontier pace and horizon stay as selected.</div></div><div class="preset-buttons" id="presets"></div></div>
 <div class="scenario-row">
 <div class="scenario-control"><div class="control-head"><label>Frontier pace</label><div class="entry"><input aria-label="Frontier pace" id="n_pace" type="number" min="0" max="100" step="5"><span class="unit">%</span></div></div><input aria-label="Frontier pace slider" id="s_pace" type="range" min="0" max="1" step="0.05"><div class="hint">100% = continued frontier progress; 0% = full pause.</div></div>
 <div class="scenario-control horizon-control"><div class="control-head"><label>Horizon</label><div class="entry"><input aria-label="Horizon" id="horizon" type="number" min="5" max="15" step="1"><span class="unit">yr</span></div></div></div>
@@ -240,9 +240,9 @@ const META=[
  {key:'investResponse',label:'Capacity response to NPV',group:'Investment',min:.1,max:1,step:.05,type:'num',range:[.25,.9],status:'Assumption',basis:'Retains gradual adjustment toward the NPV-implied investment rate. This coefficient and the 50% annual adjustment weight are not estimated investment elasticities.',sources:[]}
 ];
 const PRESETS={
- baseline:{label:'Evidence-informed two-tier baseline',p:{}},
- diffusion:{label:'Affordability / diffusion stress case',p:{priceSensitivity:2.1,diffusionGrowth:.60,frontierDemandGrowth:0,trainingShare:.03,supplyElasticity:1.8,frontierMarkup:.40,commodityComputeRatio:.85,efficiency:.05,catchupHalfLife:1}},
- risk:{label:'Frontier-dependence stress case',p:{priceSensitivity:.9,diffusionGrowth:.25,frontierDemandGrowth:.25,trainingShare:.50,supplyElasticity:.6,frontierMarkup:.32,markupHalfLife:3,catchupHalfLife:3,initialFrontierValue:2,commodityComputeRatio:.4}}
+ baseline:{label:'Evidence-informed baseline',p:{}},
+ diffusion:{label:'Diffusion-favoring scenario',p:{priceSensitivity:1.6,frontierDemandGrowth:.10,trainingShare:.20,markupHalfLife:.5}},
+ risk:{label:'Frontier-dependence scenario',p:{priceSensitivity:1.2,frontierDemandGrowth:.20,trainingShare:.40,markupHalfLife:1.5,catchupHalfLife:1}}
 };
 const SOURCES=[
  {id:'demirer',title:'The Emerging Market for Intelligence: Pricing, Supply, and Demand for LLMs',who:'Demirer, Fradkin, Tadelis & Peng · working paper · December 2025',url:'https://andreyfradkin.com/assets/LLM_Demand_12_12_2025.pdf',text:'Section 7, Table 2, column 3 (printed p. 37): elasticity −1.11, standard error 0.22, 32,539 provider-model-day observations. Within-model price variation for open models; routing and price endogeneity remain caveats. The authors distinguish provider substitution from aggregate demand.'},
@@ -292,7 +292,7 @@ function initScenario(){
 function effect(x){return Math.abs(x)<.05?'essentially unchanged':`${Math.abs(x).toFixed(1)}% ${x>0?'higher':'lower'}`}
 function render(){
  result=compare(params);const s=result.summary,r=result.ref.at(-1),a=result.alt.at(-1),pace=fmt(params.pace*100,params.pace*100%1?1:0);
- $('resultStatus').textContent=active==='baseline'?'Result · evidence-informed scenario':active?'Result · mechanism stress case':'Result · custom assumptions';
+ $('resultStatus').textContent=active==='baseline'?'Result · evidence-informed scenario':active?'Result · comparison scenario':'Result · custom assumptions';
  $('scenarioLabel').textContent=`${pace}% pace · ${params.horizon} years`;$('altLegend').textContent=`${pace}% pace`;
  $('resultNote').innerHTML=`At <strong>${pace}% frontier pace</strong>, compared with full progress in year ${params.horizon}, total AI usage is <strong>${effect(s.usage)}</strong>. Compute-supplier revenue is <strong>${effect(s.revenue)}</strong>, and cumulative new investment is <strong>${effect(s.investment)}</strong>. Frontier usage is ${effect(s.frontierUsage)}; commodity usage is ${effect(s.commodityUsage)}.`;
  $('resultSecondary').textContent=`Frontier / commodity prices in year ${params.horizon} are ${fmt(a.PF,3)} / ${fmt(a.PC,3)}, versus ${fmt(r.PF,3)} / ${fmt(r.PC,3)} at full pace (normalized price units). Commodity share among AI users is ${fmt(100*(1-a.frontierShare))}% versus ${fmt(100*(1-r.frontierShare))}% (${signed(s.commodityShareChange)} percentage points). Both scenarios get the same ordinary adoption growth. Capability catch-up favors commodity service, while a lower frontier markup makes frontier service more attractive; the net mix and investment effect depend on the assumptions.`;
@@ -356,7 +356,8 @@ function renderCalibration(){
  <tr><td>AI share of opportunities</td><td>${fmt(100*base.participation,1)}%</td><td>${fmt(100*now.participation,1)}%</td><td>Outside-option assumption, not the percentage of businesses using AI.</td></tr>
  <tr><td>Catch-up half-life, full pace / pause</td><td>${fmt(base.catchupYears,2)} / ${fmt(base.pausedCatchupYears,2)} yr</td><td>${fmt(now.catchupYears,2)} / ${fmt(now.pausedCatchupYears,2)} yr</td><td>Timing proxy plus an unmeasured pause effect; markup half-life is independently controlled.</td></tr>
  </tbody></table></div>
- <p><strong>Reading the estimates:</strong> the first preset is a reproducible, evidence-informed scenario. The other presets are mechanism stress cases, not confidence bounds or observed economies. Sensitivity uses broad, independently drawn assumption ranges. Its frequencies do not represent the probability that pacing raises investment. Price-gap and elasticity matches are baseline checks; changing assumptions can break them, as the live column shows. Establishing a fitted market-wide forecast would require tier-specific task volumes, effective prices, physical compute, participation data, and evidence about a deliberate pacing intervention.</p>`;
+ <details class="wide-details"><summary>Preset assumptions</summary><div class="inside"><div class="table-wrap"><table><thead><tr><th>Assumption</th>${Object.values(PRESETS).map(x=>`<th>${x.label}</th>`).join('')}</tr></thead><tbody>${['priceSensitivity','frontierDemandGrowth','trainingShare','markupHalfLife','catchupHalfLife'].map(key=>{const m=META.find(x=>x.key===key);return `<tr><td>${m.label}</td>${Object.values(PRESETS).map(x=>{const v=x.p[key]??DEF[key];return `<td>${m.type==='pct'?fmt(v*100,0)+'%':fmt(v,2)+(m.type==='years'?' yr':'')}</td>`}).join('')}</tr>`}).join('')}</tbody></table></div><p>All other inputs use the baseline. The diffusion-favoring scenario assumes stronger price responses and smaller frontier capability and training contributions. The frontier-dependence scenario assumes the reverse. These variations are assumptions, not separate empirical estimates. Lab contracts and financing are not modeled.</p></div></details>
+ <p><strong>Reading the estimates:</strong> the baseline is the primary evidence-informed comparison. The other presets vary the disputed mechanisms without targeting a particular investment result. Sensitivity frequencies describe the sampled assumptions, not probabilities. The live column shows which calibration checks still hold after inputs change. A market-wide forecast would require tier-specific volumes, effective prices, physical compute, participation data, and evidence about deliberate pacing.</p>`;
 }
 function buildEvidence(){
  const n=Object.fromEntries(SOURCES.map((s,i)=>[s.id,i+1])),refs=m=>m.sources?.length?m.sources.map(id=>`<a href="#ref-${id}">[${n[id]}]</a>`).join(' '):'<span class="muted">Model assumption</span>';

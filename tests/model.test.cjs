@@ -73,10 +73,15 @@ const reluctant=a.choiceShares(.9,.6,1.5,1,1,1.3,4);checks++;assert.ok(reluctant
 const fixed={...a.DEF,frontierDemandGrowth:0};let slow=1,fast=1;
 for(let t=0;t<5;t++){slow+=a.catchupRate(fixed,1)*(fixed.initialFrontierValue-slow);fast+=a.catchupRate(fixed,0)*(fixed.initialFrontierValue-fast)}
 checks++;assert.ok(fast>slow);checks++;assert.ok(a.muFrontier(5,0,a.DEF)<a.muFrontier(5,1,a.DEF));
-const positive=verify({...a.DEF,...a.PRESETS.diffusion.p}),negative=verify({...a.DEF,...a.PRESETS.risk.p});
-checks+=3;assert.ok(positive.summary.investment>1);assert.ok(negative.summary.investment<-1);assert.ok(negative.summary.commodityShareChange>0);
-const positiveMoving=verify({...a.DEF,...a.PRESETS.diffusion.p,frontierDemandGrowth:.02});
-checks+=2;assert.ok(positiveMoving.summary.investment>1);assert.ok(positiveMoving.alt.at(-1).VF<positiveMoving.ref.at(-1).VF);
+const diffusion=verify({...a.DEF,...a.PRESETS.diffusion.p}),frontier=verify({...a.DEF,...a.PRESETS.risk.p});
+// Preset outcomes are computed, not forced to have opposite signs.
+for(const preset of Object.values(a.PRESETS)){
+ const p={...a.DEF,...preset.p},r=a.compare(p);checks+=2;
+ assert.ok(p.frontierDemandGrowth>0);assert.ok(r.alt.at(-1).VF<r.ref.at(-1).VF);
+}
+// A separate boundary case confirms that investment can still rise with a moving frontier.
+const positiveMoving=verify({...a.DEF,priceSensitivity:2.1,diffusionGrowth:.60,frontierDemandGrowth:.02,trainingShare:.03,supplyElasticity:1.8,frontierMarkup:.40,commodityComputeRatio:.85,efficiency:.05,catchupHalfLife:1});
+checks+=3;assert.ok(positiveMoving.summary.investment>1);assert.ok(positiveMoving.alt.at(-1).VF<positiveMoving.ref.at(-1).VF);assert.ok(a.compare(a.DEF).summary.investment<-1);
 const close=verify({...a.DEF,pace:.500001});near(close.summary.investment,a.compare(a.DEF).summary.investment,1e-4);
 const random=a.rng(731),corners=['min','max'];
 for(const edge of corners){const p={...a.DEF,horizon:15};for(const m of a.META)p[m.key]=m[edge];verify(p)}
@@ -91,6 +96,6 @@ for(const [min,max] of [[0,.468],[0,.04],[-.244,.136],[0,1e8],[0,0]]){
  assert.ok(axis.ticks.length>=2&&axis.ticks.length<=8);
  const labels=Array.from(axis.ticks,v=>a.chartTick(v,axis));assert.equal(new Set(labels).size,labels.length);
 }
-checks+=2;assert.ok(a.investmentNote({...a.DEF,...a.PRESETS.risk.p},negative).includes('approximately cancel'));
+checks+=2;assert.ok(a.investmentNote({...a.DEF,diffusionGrowth:.25},a.compare({...a.DEF,diffusionGrowth:.25})).includes('approximately cancel'));
 assert.ok(!a.investmentNote({...a.DEF,pace:1},identical).includes('training demand falls'));
-console.log(JSON.stringify({checks,random_parameter_cases:150,affordability_investment_percent:positive.summary.investment,frontier_dependence_investment_percent:negative.summary.investment,frontier_dependence_commodity_share_pp:negative.summary.commodityShareChange},null,2));
+console.log(JSON.stringify({checks,random_parameter_cases:150,diffusion_led_investment_percent:diffusion.summary.investment,frontier_dependent_investment_percent:frontier.summary.investment,positive_boundary_investment_percent:positiveMoving.summary.investment},null,2));
