@@ -8,7 +8,7 @@ function near(x,y,tol=1e-8){checks++;assert.ok(Math.abs(x-y)<=tol*Math.max(1,Mat
 // Research moments are conditional proxy matches, not estimated market-wide demand.
 const moments=a.calibrationMoments(a.DEF);
 near(moments.priceRatio,3);near(moments.frontierElasticity,-1.11,.01);
-near(moments.aggregateElasticity,-a.DEF.priceSensitivity*(1-moments.participation));
+near(moments.aggregateElasticity,-a.DEF.priceSensitivity*(1-moments.participation)-a.DEF.usageElasticity);
 near(moments.pausedCatchupYears,a.DEF.catchupHalfLife/(1+a.DEF.pacingCatchupBoost));
 near(a.catchupRate({...a.DEF,pacingCatchupBoost:0},0),a.catchupRate({...a.DEF,pacingCatchupBoost:0},1));
 near(a.catchupRate({...a.DEF,markupHalfLife:4},.5),a.catchupRate(a.DEF,.5));
@@ -23,7 +23,9 @@ function verify(p){
   for(let t=0;t<series.length;t++){
    const r=series[t];for(const v of Object.values(r)){checks++;assert.ok(Number.isFinite(v))}
    near(r.Q,r.QF+r.QC);near(r.KI,r.kappaF*r.QF+r.kappaC*r.QC);near(r.K,r.KI+r.T);
-   near(r.sF+r.sC+r.s0,1);near(r.frontierShare,r.QF/r.Q);near(r.Q+r.M*r.s0,r.M);
+   near(r.sF+r.sC+r.s0,1);near(r.frontierShare,r.QF/r.Q);near(r.Q/r.intensity+r.M*r.s0,r.M);
+   near(r.QF,r.M*r.sF*r.intensity);near(r.QC,r.M*r.sC*r.intensity);
+   near(r.intensity,r.attractiveness**p.usageElasticity);
    near(r.P,(r.PF*r.QF+r.PC*r.QC)/r.Q);
    near(r.H,r.pk*r.K);near(r.CF,(r.pk-a.COST.variable)*r.K);
    near(r.pk,a.COST.variable+(a.COST.computeReference-a.COST.variable)*(r.K/r.S)**(1/p.supplyElasticity));
@@ -64,6 +66,23 @@ const dt=1e-6,changed=a.choiceShares(.9*Math.exp(dt),.6,1.5,1,1,1.3);
 near(Math.log(changed.sF/original.sF)/dt,-1.3*(1-original.sF),1e-5);
 const sharedRise=a.choiceShares(.9*Math.exp(dt),.6*Math.exp(dt),1.5,1,1,1.3);
 near(Math.log((sharedRise.sF+sharedRise.sC)/(original.sF+original.sC))/dt,-1.3*original.s0,1e-5);
+// Check total-use elasticities including the intensive margin, at fixed compute price.
+const p=a.DEF,n=a.normalization(p),base=a.demandAtPrice(p,1,0,a.COST.computeReference,n,1);
+function fixedPriceUsage(PF,PC,VF=base.VF,VC=base.VC){
+ const s=a.choiceShares(PF,PC,VF,VC,n.priceReference,p.priceSensitivity,p.outsideWeight);
+ const intensity=Math.exp(p.usageElasticity*(s.logB-n.logB0));
+ return {QF:n.M0*s.sF*intensity,QC:n.M0*s.sC*intensity,Q:n.M0*(s.sF+s.sC)*intensity};
+}
+const priceF=fixedPriceUsage(base.PF*Math.exp(dt),base.PC),priceC=fixedPriceUsage(base.PF,base.PC*Math.exp(dt)),pricesBoth=fixedPriceUsage(base.PF*Math.exp(dt),base.PC*Math.exp(dt));
+near(Math.log(priceF.QF/base.QF)/dt,moments.frontierElasticity,1e-5);
+near(Math.log(priceC.QC/base.QC)/dt,moments.commodityElasticity,1e-5);
+near(Math.log(pricesBoth.Q/base.Q)/dt,moments.aggregateElasticity,1e-5);
+const better=fixedPriceUsage(base.PF,base.PC,4*base.VF,4*base.VC);
+checks++;assert.ok(better.Q>base.Q*4**(p.usageElasticity/p.priceSensitivity),'Capability must increase intensity as well as participation');
+// Zero intensity elasticity reproduces the previous quantity equation at every date.
+const extensiveOnly=verify({...a.DEF,usageElasticity:0});
+for(const rows of [extensiveOnly.ref,extensiveOnly.alt])for(const r of rows){near(r.intensity,1);near(r.Q,r.M*(r.sF+r.sC));checks++;assert.ok(r.Q<r.M)}
+checks++;assert.ok(a.path(a.DEF,1).at(-1).Q>a.path(a.DEF,1).at(-1).M,'Usage must be able to grow beyond the participation ceiling');
 for(const outside of [.25,1,4]){
  const base=a.choiceShares(.9,.6,1.5,1,1,1.4,outside),rise=a.choiceShares(.9*Math.exp(dt),.6*Math.exp(dt),1.5,1,1,1.4,outside);
  near(Math.log((rise.sF+rise.sC)/(base.sF+base.sC))/dt,-1.4*base.s0,1e-5);
