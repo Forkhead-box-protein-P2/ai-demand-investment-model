@@ -2,8 +2,9 @@
 
 The canonical source is `index.html`, imported from the user's downloaded `ai_compute_lab.html` on October 4, 2026. It is a standalone HTML/CSS/JavaScript site with MathJax equation rendering. No dependency install or build is needed.
 
-`index.html` is the original evidence-informed model and default main page. `two-tier.html` is a separate experimental two-price model. Keep the original demand equation, parameter meanings, presets, and evidence table intact unless explicitly asked to change them. Navigation links between the two pages must remain available on desktop and mobile. The experimental model's tests are in `tests/model.test.cjs`.
+`index.html` is the evidence-informed 1-price model and default main page. `two-tier.html` is the 2-price model. Keep the 1-price demand equation, parameter meanings, presets, and evidence table intact unless explicitly asked to change them. Navigation links between the two pages must remain available on desktop and mobile. The experimental model's tests are in `tests/model.test.cjs`.
 
+- Use descriptive model names: “1-price model” and “2-price model.” Public explanations must describe current assumptions and equations directly, without references to development history, earlier versions, or the conversation that produced them.
 - Preserve the user's equations, assumptions, evidence references, and visual layout unless the requested change calls for updating them. Distinguish economic changes from presentation changes.
 - Validate the browser interactions relevant to a change: frontier pace, horizon, presets, assumption inputs, chart selection, reset, and sensitivity sampling. Verify equation rendering when changing mathematical markup.
 - GitHub repository: `Forkhead-box-protein-P2/ai-demand-investment-model`. GitHub Pages publishes `main` from `/`; maintain `index.html` and `.nojekyll` at the root. Use the fox account's normal authentication without storing credentials in the repository.
