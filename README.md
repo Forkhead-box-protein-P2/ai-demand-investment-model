@@ -1,6 +1,6 @@
 # AI Demand, Compute Pricing, and Investment
 
-An interactive dynamic partial-equilibrium model linking final AI usage, service pricing, compute demand, supplier cash flow, investment, and future capacity.
+An interactive two-tier dynamic partial-equilibrium model linking frontier and commodity AI choices to compute demand, supplier cash flow, investment, and future capacity.
 
 Live site: https://forkhead-box-protein-p2.github.io/ai-demand-investment-model/
 
@@ -16,7 +16,13 @@ For an HTTP preview, run `python3 -m http.server 8000 --bind 127.0.0.1` from thi
 
 Add this folder as a local project in Codex. `AGENTS.md` contains the project instructions. The complete editable site, including styles and model equations, is in `index.html`.
 
-The initial `index.html` is an exact copy of the downloaded `ai_compute_lab.html` from October 4, 2026. Publishing setup does not change the model, assumptions, citations, or layout.
+The site began with the downloaded `ai_compute_lab.html` from October 4, 2026. It now models frontier AI, commodity AI, and a no-AI outside option using minimal multinomial logit shares. Each tier has its own price, capability, usage, and compute intensity. The continuous frontier pace controls frontier value growth, commodity catch-up, frontier markup compression, and training demand. Both scenarios share ordinary adoption growth. The compute supply, cash-flow, NPV, investment, and capacity rules remain unchanged.
+
+The report documents all equations, normalization, and assumptions. Presets are illustrative, and sensitivity frequencies describe assumed parameter ranges rather than estimated probabilities. Pacing can increase or decrease investment.
+
+## Validate changes
+
+Run `node tests/model.test.cjs` with Node.js. The suite checks tier sorting, the outside option, normalization, equilibrium residuals, compute accounting, capacity dynamics, continuous pace, parameter boundaries, and investment effects of both signs across randomized cases. Browser verification also covers controls, chart selection, presets, sensitivity sampling, equation rendering, and responsive layout.
 
 ## Publish updates
 

@@ -58,7 +58,7 @@ window.MathJax = {
 <body>
 <header class="top"><div class="wrap top-inner"><div class="brand">AI compute investment model</div><nav><a href="#explore">Interactive</a><a href="#model">Explanation</a><a href="#evidence">Evidence</a><a href="#sensitivity">Sensitivity</a></nav></div></header>
 <main class="wrap report-wrap">
-<section class="hero"><div class="eyebrow">Dynamic partial-equilibrium model</div><h1>AI Demand, Compute Pricing, and Investment</h1><p>An interactive model linking final AI usage, model and application pricing, compute demand, supplier cash flow, and new capacity investment.</p></section>
+<section class="hero"><div class="eyebrow">Dynamic partial-equilibrium model</div><h1>AI Demand, Compute Pricing, and Investment</h1><p>An interactive two-tier model linking frontier and commodity AI choices, compute demand, supplier cash flow, and new capacity investment.</p></section>
 
 <section class="anchor-section explore-section">
 <div class="section-intro"><div><h2>Interactive model</h2><p>Choose a frontier pace and change any assumption below. The dashed path keeps frontier progress at 100%; the solid path uses the pace you choose. The derivation immediately below explains exactly what is being solved.</p></div></div>
@@ -68,17 +68,17 @@ window.MathJax = {
 <div class="cell-body">
 <div class="section-label"><span class="eyebrow">Alternative vs. 100% pace</span><span class="muted" id="scenarioLabel"></span></div>
 <section class="result-reading"><h3>What the current assumptions imply</h3><p id="resultNote"></p><p class="result-secondary" id="resultSecondary"></p></section>
-<div class="chart-head"><div><h3 id="chartTitle">New investment</h3><p class="small muted" id="chartSubtitle">Normalized units</p></div><select id="metricSelect"><option value="Q">Final AI usage</option><option value="P">Final AI price</option><option value="K">Total compute demand</option><option value="pk">Compute price</option><option value="H">Compute-supplier revenue</option><option value="npv">Unit NPV</option><option value="I" selected>New investment</option><option value="S">Effective compute capacity</option><option value="muF">Frontier markup</option></select></div>
+<div class="chart-head"><div><h3 id="chartTitle">New investment</h3><p class="small muted" id="chartSubtitle">Normalized units</p></div><select id="metricSelect" aria-label="Chart metric"><option value="Q">Total AI usage</option><option value="QF">Frontier AI usage</option><option value="QC">Commodity AI usage</option><option value="PF">Frontier service price</option><option value="PC">Commodity service price</option><option value="P">Average paid service price</option><option value="frontierShare">Frontier share among AI users</option><option value="participation">AI participation</option><option value="VF">Frontier capability / value</option><option value="VC">Commodity capability / value</option><option value="KI">Inference compute demand</option><option value="K">Total compute demand</option><option value="pk">Compute price</option><option value="H">Compute-supplier revenue</option><option value="npv">Unit NPV</option><option value="I" selected>New investment</option><option value="S">Effective compute capacity</option><option value="muF">Frontier markup</option></select></div>
 <div class="legend"><span><i class="dash"></i>100% pace</span><span><i></i><span id="altLegend">50% pace</span></span></div><svg id="chart" class="chart" viewBox="0 0 860 338"></svg><div class="chart-foot">Annual steps · normalized real units</div>
 </div></div>
 
 <div class="notebook-cell inputs-cell">
 <div class="cell-label">Inputs</div>
 <div class="cell-body">
-<div class="preset-row"><div><strong>Assumption preset</strong><div class="small muted">Presets reset economic assumptions, while frontier pace and horizon remain your scenario choices.</div></div><div class="preset-buttons" id="presets"></div></div>
+<div class="preset-row"><div><strong>Assumption preset</strong><div class="small muted">Illustrative cases reset economic assumptions, while frontier pace and horizon remain your scenario choices.</div></div><div class="preset-buttons" id="presets"></div></div>
 <div class="scenario-row">
-<div class="scenario-control"><div class="control-head"><label>Frontier pace</label><div class="entry"><input id="n_pace" type="number" min="0" max="100" step="5"><span class="unit">%</span></div></div><input id="s_pace" type="range" min="0" max="1" step="0.05"><div class="hint">100% = continued frontier progress; 0% = full pause.</div></div>
-<div class="scenario-control horizon-control"><div class="control-head"><label>Horizon</label><div class="entry"><input id="horizon" type="number" min="5" max="15" step="1"><span class="unit">yr</span></div></div></div>
+<div class="scenario-control"><div class="control-head"><label>Frontier pace</label><div class="entry"><input aria-label="Frontier pace" id="n_pace" type="number" min="0" max="100" step="5"><span class="unit">%</span></div></div><input aria-label="Frontier pace slider" id="s_pace" type="range" min="0" max="1" step="0.05"><div class="hint">100% = continued frontier progress; 0% = full pause.</div></div>
+<div class="scenario-control horizon-control"><div class="control-head"><label>Horizon</label><div class="entry"><input aria-label="Horizon" id="horizon" type="number" min="5" max="15" step="1"><span class="unit">yr</span></div></div></div>
 <button id="reset">Reset baseline</button>
 </div>
 <div class="assumption-groups">
@@ -92,137 +92,235 @@ window.MathJax = {
 </section>
 
 <section class="anchor-section" id="model">
-<div class="section-intro"><div><h2>Model</h2><p>A minimal dynamic partial-equilibrium model from final AI demand to new compute investment.</p></div></div>
+<div class="section-intro"><div><h2>Model</h2><p>A minimal two-tier dynamic partial-equilibrium model from user choice to new compute investment.</p></div></div>
 <div class="model-sheet teaching-model">
 <div class="model-chainline">final AI usage → compute demand → compute price &amp; cash flow → NPV → investment → future capacity</div>
-<p class="model-lead">The model formalizes one question: if frontier progress slows, does the extra usage created by lower prices offset the loss of frontier-driven demand strongly enough to preserve the economics of new compute investment? It starts with final users, solves the compute market, and ends with the expected return on another unit of capacity.</p>
+<p class="model-lead">The model formalizes one question: if frontier progress slows, does the extra usage created by lower prices offset the loss of frontier-driven demand strongly enough to preserve the economics of new compute investment? Users choose frontier AI, commodity AI, or no AI. Their tier-specific usage determines compute demand, the compute-market equilibrium, and the expected return on another unit of capacity.</p>
 
-<div class="model-section-label">Final demand and pricing</div>
-<p><strong>\(\boldsymbol{Q_t}\)</strong> is final AI usage in year \(t\), <strong>\(\boldsymbol{P_t}\)</strong> is the final price of the AI service, and <strong>\(\boldsymbol{Z_t}\)</strong> shifts demand outward as AI becomes more useful or more widely adopted. Final demand is</p>
-<div class="eq">\[Q_t = Z_t(g)\left(\frac{P_t}{P_0}\right)^{-\varepsilon}.\]</div>
-<p><strong>\(\boldsymbol{P_0}\)</strong> is the initial normalization price and <strong>\(\boldsymbol{\varepsilon}\)</strong> is the price elasticity of final demand. A lower price raises usage; a larger \(Z_t\) shifts the whole demand curve outward.</p>
+<div class="model-section-label">Two services, two prices</div>
+<p>The earlier single-price formulation put a frontier-influenced price on every unit of AI usage. It could not represent users choosing cheap legacy or open models while others paid for frontier capability. Here both services exist at every frontier pace, including full progress. Frontier and commodity usage are solved separately; a usage-weighted average price is only a descriptive output, never the price faced by all users.</p>
+<div class="eq">\[P_{F,t}=c+\kappa_{F,t}p_{K,t}+\mu_{F,t}(g)+\mu_A,\qquad P_{C,t}=c+\kappa_{C,t}p_{K,t}+\mu_A.\]</div>
+<p><strong>\(P_F,P_C\)</strong> are service prices. <strong>\(c\)</strong> is shared non-compute cost; <strong>\(p_K\)</strong> is the common compute price; <strong>\(\kappa_F,\kappa_C\)</strong> are compute per use. Only the frontier tier earns the additive frontier markup <strong>\(\mu_F\)</strong>. Both tiers retain the existing application markup <strong>\(\mu_A\)</strong>. These markups are normalized price units, not measured gross-margin percentages.</p>
+<div class="eq">\[\kappa_{F,t}=(1-e)^t,\qquad\kappa_{C,t}=\rho\kappa_{F,t},\qquad 0<\rho\leq1.\]</div>
+<p><strong>\(e\)</strong> is the common annual efficiency improvement and <strong>\(\rho\)</strong> is the commodity tier's relative compute intensity. This keeps the old efficiency channel while allowing cheaper models to use less compute per service.</p>
 
-<p>The final service price is ordinary non-compute cost plus compute cost plus the markups supported by model and application differentiation:</p>
-<div class="eq">\[P_t = c + \kappa_t p_{K,t} + \mu_{F,t}(g) + \mu_A.\]</div>
-<p><strong>\(\boldsymbol{c}\)</strong> is non-compute cost, <strong>\(\boldsymbol{\kappa_t}\)</strong> is compute required per unit of AI service, <strong>\(\boldsymbol{p_{K,t}}\)</strong> is the compute price, <strong>\(\boldsymbol{\mu_{F,t}}\)</strong> is the frontier-model markup, and <strong>\(\boldsymbol{\mu_A}\)</strong> is the application-layer markup. As frontier differentiation erodes, \(\mu_{F,t}\) falls, lowering the final service price and increasing usage.</p>
+<div class="model-section-label">Capability, progress, and catch-up</div>
+<p><strong>\(g\in[0,1]\)</strong> remains continuous frontier pace: 1 is full progress and 0 is a full pause. Frontier capability/value <strong>\(V_F\)</strong> grows with progress. Commodity value <strong>\(V_C\)</strong> starts below it and receives existing frontier capability with a lag:</p>
+<div class="eq">\[V_{F,t}=V_{F,0}(1+\phi g)^t,\qquad V_{C,0}=1,\]</div>
+<div class="eq">\[V_{C,t+1}=V_{C,t}+d(g)(V_{F,t}-V_{C,t}),\qquad d(g)=1-2^{-(2-g)/h}.\]</div>
+<p><strong>\(V_{F,0}\)</strong> is the initial frontier value premium, <strong>\(\phi\)</strong> is annual frontier value growth at full pace, and <strong>\(h\)</strong> is the catch-up half-life at full pace. Commodity models improve even at \(g=1\). Their catch-up half-life is \(h/(2-g)\), falling to \(h/2\) under a pause. The factor of two and reuse of \(h\) are simplifying assumptions, not estimates. A pause diffuses the existing frontier; it does not give commodity models capabilities that have not yet been created.</p>
+<p>The existing markup rule is preserved:</p>
+<div class="eq">\[\mu_{F,t}(g)=\mu_{F,0}\left[g+(1-g)2^{-t/h}\right].\]</div>
+<p>Full progress continually renews the frontier markup. Under a pause the initial markup decays; intermediate pace lies between those cases. This is a reduced-form pricing rule rather than a strategic pricing game.</p>
 
-<p>Frontier progress also creates user value; it is not modeled as pure pricing power. <strong>\(\boldsymbol{g}\)</strong> is frontier pace, with \(g=1\) equal to the reference pace and \(g=0\) a full pause. <strong>\(\boldsymbol{g_D}\)</strong> is demand growth from diffusion and adoption that occurs at every frontier pace, while <strong>\(\boldsymbol{\phi}\)</strong> is the additional demand growth created by frontier capability progress:</p>
-<div class="eq">\[Z_t(g)=Z_0\left(1+g_D+\phi g\right)^t.\]</div>
-<p>Every scenario therefore gets diffusion. Faster frontier progress additionally makes the service more useful and shifts final demand outward.</p>
+<div class="model-section-label">Users sort by price and value</div>
+<p>A minimal multinomial logit gives each usage opportunity three choices: frontier AI, commodity AI, or no AI. The outside option has utility zero. For tier \(j\in\{F,C\}\), systematic utility is \(u_j=\ln V_j-\beta\ln(P_j/\bar P)\). Standard logit shares are therefore</p>
+<div class="eq">\[w_j=V_j(P_j/\bar P)^{-\beta},\quad s_F=\frac{w_F}{1+w_F+w_C},\quad s_C=\frac{w_C}{1+w_F+w_C},\quad s_0=\frac{1}{1+w_F+w_C}.\]</div>
+<p><strong>\(\beta\)</strong> is price sensitivity and <strong>\(\bar P\)</strong> is a fixed normalization price shared by both tiers and scenarios. Higher relative value or a lower relative price attracts users. Raising commodity value shifts demand from the frontier tier and from non-use into commodity AI, holding other values and prices fixed. Frontier markup compression works in the other direction by making frontier service cheaper. The net tier mix is calculated, not forced.</p>
+<div class="eq">\[M_t=M_0(1+g_D)^t,\qquad Q_{F,t}=M_ts_{F,t},\qquad Q_{C,t}=M_ts_{C,t},\qquad Q_t=Q_{F,t}+Q_{C,t}.\]</div>
+<p><strong>\(M_t\)</strong> is the market of potential usage opportunities, and <strong>\(g_D\)</strong> is ordinary diffusion/adoption growth, identical in both scenarios. Prices and capabilities also change participation \(s_F+s_C\). The frontier share <em>among AI users</em> is \(Q_F/(Q_F+Q_C)\), which differs from its share of all opportunities \(s_F\).</p>
+<p>The old constant demand elasticity is replaced by logit price sensitivity. Tier \(j\)'s own-price elasticity is \(-\beta(1-s_j)\); a common proportional increase in both service prices gives total-usage elasticity \(-\beta s_0\). Observed API elasticities are only a loose proxy for \(\beta\). The logit choice structure assumes independent unobserved preferences and proportional substitution; its coefficients and tier values are not fitted to AI customer data. See the logit method reference below.</p>
+<p>For each parameter draw, \(\bar P=c+p_{K,0}+\mu_{F,0}+\mu_A\), with \(p_{K,0}=0.35\). Compute initial reference shares at \(g=1\); set \(M_0=1/(s_{F,0}+s_{C,0})\), so initial reference usage is one. The same \(M_0\), \(\bar P\), initial capacity, and initial capabilities are then used in both scenarios. Commodity value updates after each annual equilibrium.</p>
 
 <div class="model-section-label">From usage to compute</div>
-<p>Final usage creates inference demand for compute. <strong>\(\boldsymbol{K_t^D}\)</strong> is total compute demand and <strong>\(\boldsymbol{T_t}\)</strong> is frontier-training compute demand:</p>
-<div class="eq">\[K_t^D = \kappa_t Q_t + T_t(g),\]</div>
-<div class="eq">\[T_t(g)=gT_0.\]</div>
-<p><strong>\(\boldsymbol{T_0}\)</strong> is frontier-training demand at the reference frontier pace. Slower frontier progress can therefore increase inference usage through lower prices while simultaneously reducing frontier-training demand.</p>
+<div class="eq">\[K_{I,t}=\kappa_{F,t}Q_{F,t}+\kappa_{C,t}Q_{C,t},\qquad K_t^D=K_{I,t}+T_t(g),\qquad T_t(g)=gT_0.\]</div>
+<p><strong>\(K_I\)</strong> is inference compute, <strong>\(T\)</strong> is frontier-training compute, and <strong>\(K^D\)</strong> is total compute demand. With initial training share \(\tau\), set \(T_0=K_{I,0}\tau/(1-\tau)\) and \(S_0=K_{I,0}+T_0\). This preserves the meaning of the training-share control after inference splits into two tiers.</p>
 
 <div class="model-section-label">Compute-market equilibrium</div>
-<p>Now close the compute market. <strong>\(\boldsymbol{S_t}\)</strong> is effective compute capacity. The equilibrium compute price is determined by derived compute demand relative to available capacity:</p>
-<div class="eq">\[p_{K,t}=\mathcal{P}\!\left(\frac{K_t^D}{S_t}\right), \qquad \mathcal{P}' > 0.\]</div>
-<p>The applet uses a constant-elasticity inverse-supply schedule for \(\mathcal{P}\). <strong>\(\boldsymbol{v}\)</strong> is the variable-cost floor and <strong>\(\boldsymbol{\sigma}\)</strong> controls short-run supply responsiveness.</p>
+<div class="eq">\[p_{K,t}=v+(p_{K,0}-v)\left(\frac{K_t^D}{S_t}\right)^{1/\sigma}.\]</div>
+<p><strong>\(S_t\)</strong> is effective capacity, <strong>\(v=0.18\)</strong> is the variable-cost floor, and <strong>\(\sigma\)</strong> is short-run supply elasticity. Non-compute cost remains \(c=0.25\). Because both service prices depend on the compute price, each year solves the same compute-market fixed point:</p>
+<div class="equilibrium-line">\[p_K\longrightarrow(P_F,P_C)\longrightarrow(Q_F,Q_C)\longrightarrow K^D\longrightarrow p_K.\]</div>
+<p><strong>How the equilibrium is computed:</strong> hold capacity, capabilities, and scenario assumptions fixed; bracket a compute price above the cost floor; then bisect until the price implied by demand matches the price being tested. Both tiers' demand is recomputed at every step. This improves numerical convergence without changing the supply schedule.</p>
 
-<p>Because the compute price \(p_{K,t}\) is itself part of the final AI price \(P_t\), the year's equilibrium is a fixed point:</p>
-<div class="equilibrium-line">\[p_{K,t} \rightarrow P_t \rightarrow Q_t \rightarrow K_t^D \rightarrow p_{K,t}.\]</div>
-<p><strong>How the equilibrium is computed:</strong> the applet begins each year with \(S_t\) and the scenario parameters fixed, guesses \(p_{K,t}\), and then computes the implied final AI price \(P_t\), usage \(Q_t\), and total compute demand \(K_t^D\). That demand implies a new compute price through the inverse-supply schedule. The applet feeds that price back through the same chain and repeats until the compute price stops moving. The converged price and quantity are that year's partial-equilibrium outcome.</p>
+<div class="model-section-label">Cash flow, NPV, and investment</div>
+<div class="eq">\[H_t=p_{K,t}K_t^D,\qquad CF_t=(p_{K,t}-v)K_t^D,\qquad NPV_t=\frac{CF_t}{S_t}A(r,\operatorname{round}(L))-b.\]</div>
+<p><strong>\(H\)</strong> is compute-supplier revenue and <strong>\(CF\)</strong> is its operating cash flow. The annuity factor <strong>\(A\)</strong> discounts constant current per-capacity cash flow over the rounded economic life; <strong>\(L\)</strong> is the unrounded life control, <strong>\(r\)</strong> is the discount rate, and <strong>\(b\)</strong> is build cost per unit of capacity. Service markups are not added to compute-supplier revenue. This retains the existing NPV approximation rather than introducing a forecast of future prices.</p>
+<div class="eq">\[\widehat\iota_t=\max\!\left(\delta+\alpha\frac{NPV_t}{b},0\right),\quad\iota_t=\tfrac12\iota_{t-1}+\tfrac12\widehat\iota_t,\quad I_t=\iota_tS_t,\]</div>
+<div class="eq">\[S_{t+1}=(1-\delta)S_t+I_t,\qquad\delta=1/L,\qquad\iota_{-1}=\delta.\]</div>
+<p><strong>\(\alpha\)</strong> is investment response and <strong>\(\iota\)</strong> is the gradually adjusting investment rate. The capacity, cash-flow, NPV, depreciation, and investment rules are unchanged. Economic life determines the annuity's rounded number of years; depreciation uses the unrounded life control.</p>
+<p class="model-lead">Pacing can raise or lower compute investment. Faster catch-up and cheaper services can increase participation or shift usage toward commodity AI. Lower frontier value growth, reduced training demand, and lower commodity compute intensity can weaken compute demand. Frontier price compression can also attract users back to the frontier tier. These competing channels determine compute scarcity, supplier cash flow, NPV, and investment; no investment sign or final tier share is imposed.</p>
 
-<div class="model-section-label">Cash flow and investment</div>
-<p>Once the equilibrium is found, <strong>\(\boldsymbol{H_t}\)</strong> is compute-supplier revenue and <strong>\(\boldsymbol{CF_t}\)</strong> is operating cash flow:</p>
-<div class="eq">\[H_t = p_{K,t}K_t^D,\]</div>
-<div class="eq">\[CF_t = \left(p_{K,t}-v\right)K_t^D.\]</div>
-<p>This is why final usage does not mechanically determine hyperscaler revenue. Usage can rise while supplier revenue falls if the compute price falls enough; it can also rise while supplier revenue rises if the extra demand keeps compute scarce.</p>
-
-<p>Investment depends on the expected value of adding capacity. <strong>\(\boldsymbol{NPV_t}\)</strong> is the net present value of one additional unit of effective capacity, <strong>\(\boldsymbol{r}\)</strong> is the discount rate, <strong>\(\boldsymbol{L}\)</strong> is the economic life of capacity, <strong>\(\boldsymbol{A(r,L)}\)</strong> is the corresponding annuity factor, and <strong>\(\boldsymbol{I_0}\)</strong> is normalized build cost:</p>
-<div class="eq">\[NPV_t = \frac{CF_t}{S_t}A(r,L)-I_0.\]</div>
-<p><strong>\(\boldsymbol{I_t}\)</strong> is new investment. It rises with NPV, while effective capacity evolves with investment and retirement:</p>
-<div class="eq">\[I_t = I(NPV_t), \qquad I' > 0,\]</div>
-<div class="eq">\[S_{t+1}=(1-\delta)S_t+I_t.\]</div>
-<p><strong>\(\boldsymbol{\delta}\)</strong> is retirement and obsolescence of effective capacity. In the simulation, investment adjusts gradually toward the rate implied by NPV rather than jumping there instantly.</p>
-
-<div class="model-section-label">Frontier pace</div>
-<p>Finally, frontier pace determines how quickly the frontier markup is renewed or competed away. <strong>\(\boldsymbol{h}\)</strong> is the catch-up half-life:</p>
-<div class="eq">\[\mu_{F,t}(g)=\mu_{F,0}\left[g+(1-g)2^{-t/h}\right].\]</div>
-<p>At the reference pace, frontier differentiation is continually renewed. Under a full pause, the existing markup decays as competitors catch up. Intermediate pacing lies between those cases.</p>
-
-<p class="model-lead">The comparison is therefore one equilibrium tradeoff. Slower frontier progress creates more price pressure through faster markup erosion, which can increase usage, but it also reduces frontier-driven demand growth and frontier-training compute. Those forces determine the equilibrium compute price and quantity, which determine supplier cash flow, NPV, and ultimately investment.</p>
 </div>
 </section>
-<section class="anchor-section" id="evidence"><div class="section-intro"><div><h2>Evidence and calibration</h2><p>The baseline uses observed evidence where it exists and explicit ranges where it does not. Source numbers link each empirical claim to the references below.</p></div></div><div class="table-wrap"><table class="evidence-table"><thead><tr><th>Input</th><th>Baseline</th><th>Status</th><th>Basis</th><th>Source</th></tr></thead><tbody id="evidenceBody"></tbody></table></div><div class="references"><h3>References</h3><ol id="sources"></ol></div></section>
+<section class="anchor-section" id="evidence"><div class="section-intro"><div><h2>Evidence and calibration</h2><p>The two-tier baseline is illustrative. Evidence provides qualitative anchors and loose proxies; the logit coefficient, value premium, compute-intensity ratio, and catch-up rule are not estimated from customer data. Source numbers link inputs to the references below.</p></div></div><div class="table-wrap"><table class="evidence-table"><thead><tr><th>Input</th><th>Baseline</th><th>Status</th><th>Basis</th><th>Source</th></tr></thead><tbody id="evidenceBody"></tbody></table></div><div class="references"><h3>References</h3><ol id="sources"></ol></div></section>
 
-<section class="anchor-section" id="sensitivity"><div class="section-intro"><div><h2>Sensitivity</h2><p>Draw from the editable ranges to see which parameter regimes produce more or less compute investment under slower frontier progress.</p></div></div><div class="panel" style="padding:20px"><div class="sensitivity-head"><label>Draws<select id="drawCount"><option>128</option><option selected>256</option><option>512</option></select></label><label>Seed<input id="seed" type="number" value="1701" min="0" step="1"></label><button class="primary" id="runSweep">Run sensitivity</button></div><details class="wide-details"><summary>Edit ranges</summary><div class="inside"><div class="table-wrap"><table class="range-table"><thead><tr><th>Vary</th><th>Input</th><th>Low</th><th>Baseline</th><th>High</th></tr></thead><tbody id="rangesBody"></tbody></table></div></div></details><div id="sweepResults" class="sweep-grid hidden"></div></div></section>
-<footer class="footer"><div>Interactive model of AI demand, compute pricing and investment.</div></footer>
+<section class="anchor-section" id="sensitivity"><div class="section-intro"><div><h2>Sensitivity</h2><p>Draw from editable ranges, including tier values and compute intensity, to see which assumptions produce more or less compute investment under pacing. Each draw solves both tier markets within the shared compute-market equilibrium.</p></div></div><div class="panel" style="padding:20px"><div class="sensitivity-head"><label>Draws<select id="drawCount"><option>128</option><option selected>256</option><option>512</option></select></label><label>Seed<input id="seed" type="number" value="1701" min="0" step="1"></label><button class="primary" id="runSweep">Run sensitivity</button></div><details class="wide-details"><summary>Edit ranges</summary><div class="inside"><div class="table-wrap"><table class="range-table"><thead><tr><th>Vary</th><th>Input</th><th>Low</th><th>Baseline</th><th>High</th></tr></thead><tbody id="rangesBody"></tbody></table></div></div></details><p id="sweepStatus" class="small muted" role="status"></p><div id="sweepResults" class="sweep-grid hidden"></div></div></section>
+<footer class="footer"><div>Interactive two-tier model of AI demand, compute pricing and investment.</div></footer>
 </main><div id="toast" class="toast"></div>
 <script>
-const DEF={pace:.5,horizon:10,epsilon:1.3,diffusionGrowth:.35,frontierDemandGrowth:.15,efficiency:.20,frontierMarkup:.25,appMarkup:.15,markupHalfLife:1,trainingShare:.30,supplyElasticity:1.0,discount:.10,economicLife:4,buildCost:.50,investResponse:.60};
+const DEF={pace:.5,horizon:10,priceSensitivity:1.3,diffusionGrowth:.35,frontierDemandGrowth:.15,initialFrontierValue:1.5,efficiency:.20,commodityComputeRatio:.6,frontierMarkup:.25,appMarkup:.15,markupHalfLife:1,trainingShare:.30,supplyElasticity:1.0,discount:.10,economicLife:4,buildCost:.50,investResponse:.60};
+const COST={nonCompute:.25,variable:.18,computeReference:.35};
+function muFrontier(t,pace,p){return p.frontierMarkup*(pace+(1-pace)*Math.pow(2,-t/p.markupHalfLife))}
+function catchupRate(p,pace){return 1-Math.pow(2,-(2-pace)/p.markupHalfLife)}
+function capabilities(p,pace,t,VC){return {VF:p.initialFrontierValue*Math.pow(1+p.frontierDemandGrowth*pace,t),VC}}
+function choiceShares(PF,PC,VF,VC,priceReference,beta){
+ const uF=Math.log(VF)-beta*Math.log(PF/priceReference),uC=Math.log(VC)-beta*Math.log(PC/priceReference);
+ const shift=Math.max(0,uF,uC),wF=Math.exp(uF-shift),wC=Math.exp(uC-shift),w0=Math.exp(-shift),den=w0+wF+wC;
+ return {sF:wF/den,sC:wC/den,s0:w0/den};
+}
+function normalization(p){
+ const priceReference=COST.nonCompute+COST.computeReference+p.frontierMarkup+p.appMarkup;
+ const PC0=COST.nonCompute+p.commodityComputeRatio*COST.computeReference+p.appMarkup;
+ const shares=choiceShares(priceReference,PC0,p.initialFrontierValue,1,priceReference,p.priceSensitivity);
+ const M0=1/(shares.sF+shares.sC),QF0=M0*shares.sF,QC0=M0*shares.sC,KI0=QF0+p.commodityComputeRatio*QC0;
+ const T0=KI0*p.trainingShare/(1-p.trainingShare),S0=KI0+T0;
+ return {priceReference,M0,QF0,QC0,KI0,T0,S0};
+}
+function demandAtPrice(p,pace,t,pk,norm,VC){
+ const {VF}=capabilities(p,pace,t,VC),M=norm.M0*Math.pow(1+p.diffusionGrowth,t);
+ const kappaF=Math.pow(1-p.efficiency,t),kappaC=p.commodityComputeRatio*kappaF,muF=muFrontier(t,pace,p);
+ const PF=COST.nonCompute+kappaF*pk+muF+p.appMarkup,PC=COST.nonCompute+kappaC*pk+p.appMarkup;
+ const {sF,sC,s0}=choiceShares(PF,PC,VF,VC,norm.priceReference,p.priceSensitivity);
+ const QF=M*sF,QC=M*sC,Q=QF+QC,KI=kappaF*QF+kappaC*QC,T=norm.T0*pace,K=KI+T;
+ return {t,M,VF,VC,kappaF,kappaC,muF,PF,PC,sF,sC,s0,QF,QC,Q,KI,T,K,P:(PF*QF+PC*QC)/Q,frontierShare:sF/(sF+sC),participation:sF+sC};
+}
+function supplyPrice(p,K,S){return COST.variable+(COST.computeReference-COST.variable)*Math.pow(K/S,1/p.supplyElasticity)}
+function solveYear(p,pace,t,S,norm,VC){
+ // Bracket the same compute-market fixed point, then solve it by bisection.
+ const residual=pk=>pk-supplyPrice(p,demandAtPrice(p,pace,t,pk,norm,VC).K,S);
+ let lo=COST.variable,hi=COST.computeReference;
+ for(let n=0;residual(hi)<0&&n<100;n++)hi*=2;
+ if(!Number.isFinite(hi)||residual(hi)<0)throw new Error('Could not bracket the compute-market equilibrium.');
+ let pk=hi;
+ for(let n=0;n<120;n++){
+  pk=(lo+hi)/2;const gap=residual(pk);
+  if(Math.abs(gap)<=1e-10*Math.max(1,pk))break;
+  if(gap>0)hi=pk;else lo=pk;
+ }
+ const row=demandAtPrice(p,pace,t,pk,norm,VC),H=pk*row.K,CF=(pk-COST.variable)*row.K;
+ return {...row,S,pk,H,CF,equilibriumResidual:residual(pk)};
+}
+function path(p,pace){
+ const norm=normalization(p),rows=[],L=Math.max(1,Math.round(p.economicLife));
+ const annuity=Array.from({length:L},(_,j)=>1/Math.pow(1+p.discount,j+1)).reduce((a,b)=>a+b,0),delta=1/p.economicLife,adjust=.5;
+ let S=norm.S0,VC=1,invRate=delta;
+ for(let t=0;t<=p.horizon;t++){
+  const row=solveYear(p,pace,t,S,norm,VC),unitCF=row.CF/S,npv=unitCF*annuity-p.buildCost;
+  const targetRate=Math.max(delta+p.investResponse*npv/p.buildCost,0);
+  invRate=(1-adjust)*invRate+adjust*targetRate;
+  const I=invRate*S;Object.assign(row,{npv,I,invRate,targetRate});rows.push(row);
+  S=(1-delta)*S+I;VC+=catchupRate(p,pace)*(row.VF-VC);
+ }
+ return rows;
+}
+function compare(p){
+ const ref=path(p,1),alt=path(p,p.pace),last=a=>a[a.length-1],sum=(a,k)=>a.reduce((s,x)=>s+x[k],0),chg=(a,b)=>100*(a/b-1);
+ return {ref,alt,summary:{usage:chg(last(alt).Q,last(ref).Q),frontierUsage:chg(last(alt).QF,last(ref).QF),commodityUsage:chg(last(alt).QC,last(ref).QC),revenue:chg(last(alt).H,last(ref).H),investment:chg(sum(alt,'I'),sum(ref,'I')),npv:100*(last(alt).npv-last(ref).npv)/p.buildCost,price:chg(last(alt).pk,last(ref).pk),commodityShareChange:100*(last(ref).frontierShare-last(alt).frontierShare)}};
+}
+
 const META=[
- {key:'epsilon',label:'Final-demand elasticity',group:'Demand',min:.5,max:3,step:.05,type:'num',range:[.7,2.3],status:'Proxy',basis:'Short-run API-demand evidence is around unit elastic; final-user long-run elasticity is not directly identified.',sources:['demirer']},
- {key:'diffusionGrowth',label:'Diffusion / adoption demand growth',group:'Demand',min:.05,max:1.00,step:.01,type:'pct',range:[.15,.70],status:'Assumption',basis:'Demand growth that occurs even with no additional frontier progress. Rapid AI adoption supports a high baseline, but this component is not directly identified.',sources:['menlo','hai']},
- {key:'frontierDemandGrowth',label:'Frontier capability contribution to demand growth',group:'Demand',min:0,max:.60,step:.01,type:'pct',range:[0,.35],status:'Unidentified',basis:'Additional outward demand shift from new frontier capabilities. No direct structural estimate exists; the range is deliberately wide.',sources:['hai']},
- {key:'efficiency',label:'Annual decline in compute per service',group:'Demand',min:-.10,max:.50,step:.01,type:'pct',range:[0,.40],status:'Assumption',basis:'Per-task inference costs and compute requirements have fallen rapidly, while workload mix is also becoming more compute intensive.',sources:['hai','jep']},
- {key:'frontierMarkup',label:'Initial frontier markup',group:'Pricing',min:.05,max:.45,step:.01,type:'pct',range:[.10,.40],status:'Proxy',basis:'Frontier products show meaningful gross margins and price dispersion; gross margin is only a loose cross-check on structural markup.',sources:['anthropic','jep']},
- {key:'appMarkup',label:'Application markup',group:'Pricing',min:0,max:.35,step:.01,type:'pct',range:[0,.30],status:'Unidentified',basis:'Application-layer spending is already large, but durable application markups are not directly measured.',sources:['menlo']},
- {key:'markupHalfLife',label:'Frontier-markup catch-up half-life',group:'Pricing',min:.25,max:3,step:.25,type:'years',range:[.25,2],status:'Unidentified',basis:'Model leadership and price advantages turn over quickly, but no clean commercial markup half-life is identified.',sources:['jep','hai']},
- {key:'trainingShare',label:'Initial frontier-training share of compute',group:'Compute',min:0,max:.70,step:.01,type:'pct',range:[.10,.55],status:'Proxy',basis:'Frontier-lab disclosures suggest training/R&D is a large share of their compute spending, but that is not the same as a market-wide physical-compute share.',sources:['hai']},
- {key:'supplyElasticity',label:'Short-run compute-supply elasticity',group:'Compute',min:.3,max:3,step:.1,type:'num',range:[.5,2],status:'Assumption',basis:'Effective compute capacity is relatively inelastic in the short run; the exact elasticity is not directly identified.',sources:[]},
- {key:'discount',label:'Discount rate',group:'Investment',min:.04,max:.20,step:.005,type:'pct',range:[.06,.16],status:'Assumption',basis:'A modeling assumption for discounting expected compute cash flow rather than an empirical estimate.',sources:[]},
- {key:'economicLife',label:'Economic life of compute',group:'Investment',min:2,max:7,step:.5,type:'years',range:[3,6],status:'Proxy',basis:'Server and accelerator accounting lives provide a loose anchor; economic obsolescence can be faster.',sources:['msft']},
- {key:'buildCost',label:'Build cost per unit of capacity',group:'Investment',min:.25,max:1.2,step:.05,type:'num',range:[.35,.8],status:'Normalization',basis:'Normalized capital cost; only relative scenario effects are interpreted.',sources:[]},
- {key:'investResponse',label:'Capacity response to NPV',group:'Investment',min:.1,max:1,step:.05,type:'num',range:[.25,.9],status:'Assumption',basis:'Controls how quickly capacity adjusts toward the investment rate implied by NPV. It is a behavioral parameter, not a measured elasticity.',sources:[]}
+ {key:'priceSensitivity',label:'User price sensitivity (logit)',group:'Demand',min:.5,max:3,step:.05,type:'num',range:[.7,2.3],status:'Proxy',basis:'A logit coefficient, not the old constant demand elasticity. Own-price elasticity is −β(1−s_j); observed API elasticities only loosely inform its range.',sources:['demirer','logit']},
+ {key:'diffusionGrowth',label:'Diffusion / adoption growth of opportunities',group:'Demand',min:.05,max:1.00,step:.01,type:'pct',range:[.15,.70],status:'Assumption',basis:'Growth of potential usage opportunities, shared by both scenarios. Participation is separately determined by the two service prices, values, and outside option.',sources:['menlo','hai']},
+ {key:'frontierDemandGrowth',label:'Frontier capability / value growth',group:'Demand',min:0,max:.60,step:.01,type:'pct',range:[0,.35],status:'Unidentified',basis:'Annual frontier value growth at full pace. Pace scales this rate; it is not also added to ordinary adoption growth.',sources:['hai']},
+ {key:'initialFrontierValue',label:'Initial frontier value relative to commodity',group:'Demand',min:1.05,max:3,step:.05,type:'num',range:[1.1,2.5],status:'Unidentified',basis:'Initial frontier value index, with commodity value normalized to 1. This toy preference scale is not an estimated benchmark-to-willingness-to-pay mapping.',sources:[]},
+ {key:'efficiency',label:'Annual decline in compute per service',group:'Compute',min:-.10,max:.50,step:.01,type:'pct',range:[0,.40],status:'Assumption',basis:'A common proportional change in both tiers’ compute per use. Workload mix is separately captured by tier choice.',sources:['hai','jep']},
+ {key:'commodityComputeRatio',label:'Commodity compute per use / frontier',group:'Compute',min:.25,max:1,step:.05,type:'num',range:[.35,.95],status:'Unidentified',basis:'Relative compute intensity ρ. It can change how much inference compute a shift between tiers requires; no market-wide estimate is asserted.',sources:[]},
+ {key:'frontierMarkup',label:'Initial frontier markup (price units)',group:'Pricing',min:0,max:.50,step:.01,type:'num',range:[.10,.45],status:'Proxy',basis:'Additive markup on frontier service only. Commodity frontier markup is zero. Gross margins are a loose cross-check, not a direct estimate of this normalized price component.',sources:['anthropic','jep']},
+ {key:'appMarkup',label:'Shared application markup (price units)',group:'Pricing',min:0,max:.35,step:.01,type:'num',range:[0,.30],status:'Unidentified',basis:'Common additive application markup on both services. Application spending does not identify this structural markup.',sources:['menlo']},
+ {key:'markupHalfLife',label:'Catch-up / markup half-life at full pace',group:'Pricing',min:.25,max:3,step:.25,type:'years',range:[.5,3],status:'Assumption',basis:'Shared reduced-form time scale. Commodity capability catch-up speeds up to twice its full-pace rate under a pause; frontier markup decays with the existing pacing rule.',sources:['jep','hai']},
+ {key:'trainingShare',label:'Initial frontier-training share of compute',group:'Compute',min:0,max:.70,step:.01,type:'pct',range:[.03,.55],status:'Proxy',basis:'Initial training fraction is normalized relative to the two tiers’ combined inference compute. Training demand remains gT₀.',sources:['hai']},
+ {key:'supplyElasticity',label:'Short-run compute-supply elasticity',group:'Compute',min:.3,max:3,step:.1,type:'num',range:[.5,2],status:'Assumption',basis:'Controls the unchanged inverse-supply schedule. The exact market-wide elasticity is not directly identified.',sources:[]},
+ {key:'discount',label:'Discount rate',group:'Investment',min:.04,max:.20,step:.005,type:'pct',range:[.06,.16],status:'Assumption',basis:'Discounting assumption for the unchanged constant-current-cash-flow NPV approximation.',sources:[]},
+ {key:'economicLife',label:'Economic life of compute',group:'Investment',min:2,max:7,step:.5,type:'years',range:[3,6],status:'Proxy',basis:'Accounting lives provide a loose anchor. The annuity uses rounded years; capacity depreciation uses 1/L.',sources:['msft']},
+ {key:'buildCost',label:'Build cost per unit of capacity',group:'Investment',min:.25,max:1.2,step:.05,type:'num',range:[.35,.8],status:'Normalization',basis:'Normalized capital cost. Relative scenario outcomes, rather than dollar investment forecasts, are interpreted.',sources:[]},
+ {key:'investResponse',label:'Capacity response to NPV',group:'Investment',min:.1,max:1,step:.05,type:'num',range:[.25,.9],status:'Assumption',basis:'Retains gradual adjustment toward the investment rate implied by NPV. It is not a measured investment elasticity.',sources:[]}
 ];
+const PRESETS={
+ baseline:{label:'Illustrative two-tier baseline',p:{}},
+ diffusion:{label:'Affordability / diffusion case',p:{priceSensitivity:2.1,diffusionGrowth:.60,frontierDemandGrowth:0,trainingShare:.03,supplyElasticity:1.8,frontierMarkup:.40,commodityComputeRatio:.85,efficiency:.05}},
+ risk:{label:'Frontier-dependence case',p:{priceSensitivity:.9,diffusionGrowth:.25,frontierDemandGrowth:.25,trainingShare:.50,supplyElasticity:.6,frontierMarkup:.32,markupHalfLife:3,initialFrontierValue:2,commodityComputeRatio:.4}}
+};
+
 const SOURCES=[
  {id:'demirer',title:'LLM demand research',who:'Demirer et al. / Luohan Academy · 2026',url:'https://www.luohanacademy.com/en/webinar/1122/',text:'Reports preliminary short-run API price elasticities around one.'},
  {id:'jep',title:'The Emerging Market for Intelligence',who:'Demirer, Fradkin & Tadelis · Journal of Economic Perspectives · 2026',url:'https://www.aeaweb.org/articles?id=10.1257/jep.20261506',text:'Documents rapid model entry, price declines, quality differentiation and competitive catch-up.'},
  {id:'anthropic',title:'Anthropic gross-margin estimate',who:'Morningstar / PitchBook · 2026',url:'https://www.morningstar.com/stocks/how-anthropic-makes-moneyand-what-investors-should-know-ahead-its-ipo-filing',text:'Provides a rough empirical cross-check that frontier model products can earn meaningful gross margins.'},
  {id:'menlo',title:'State of Generative AI in the Enterprise',who:'Menlo Ventures · 2025',url:'https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/',text:'Documents rapid enterprise AI spending and adoption, including substantial spending at the application layer.'},
  {id:'hai',title:'AI Index 2026',who:'Stanford HAI · 2026',url:'https://hai.stanford.edu/ai-index/2026-ai-index-report',text:'Provides evidence on model convergence, inference-cost declines, frontier-lab compute spending and broader AI adoption.'},
- {id:'msft',title:'Microsoft 2025 Annual Report',who:'Microsoft · 2025',url:'https://www.microsoft.com/investor/reports/ar25/index.html',text:'Reports useful-life assumptions for computer equipment, used only as a loose anchor for the economic-life range.'}
+ {id:'msft',title:'Microsoft 2025 Annual Report',who:'Microsoft · 2025',url:'https://www.microsoft.com/investor/reports/ar25/index.html',text:'Reports useful-life assumptions for computer equipment, used only as a loose anchor for the economic-life range.'},
+ {id:'logit',title:'Discrete Choice Methods with Simulation — Logit',who:'Kenneth Train · 2009',url:'https://eml.berkeley.edu/books/choice2nd/Ch03_p34-75.pdf',text:'Method reference for multinomial logit choice shares and its substitution assumptions. It does not estimate the applet’s AI-demand coefficients.'}
 ];
-const PRESETS={baseline:{label:'Evidence-informed baseline',p:{}},diffusion:{label:'Diffusion-favoring',p:{epsilon:2.1,diffusionGrowth:.60,frontierDemandGrowth:.08,trainingShare:.15,supplyElasticity:1.8,frontierMarkup:.20}},risk:{label:'Frontier-dependence case',p:{epsilon:.9,diffusionGrowth:.25,frontierDemandGrowth:.25,trainingShare:.50,supplyElasticity:.6,frontierMarkup:.32,markupHalfLife:.75}}};
 let params={...DEF},active='baseline',result=null;
-const $=id=>document.getElementById(id);const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));const fmt=(x,d=1)=>Number.isFinite(x)?Number(x).toFixed(d):'—';const signed=x=>(x>=0?'+':'')+fmt(x,1);const pct=m=>m.type==='pct';
-function muFrontier(t,pace,p){return p.frontierMarkup*(pace+(1-pace)*Math.pow(2,-t/p.markupHalfLife))}
-function solveYear(p,pace,t,S,P0,T0){
- const c=.25,v=.18,pRef=.35,Z=Math.pow(1+p.diffusionGrowth+p.frontierDemandGrowth*pace,t),kappa=Math.pow(1-p.efficiency,t),muF=muFrontier(t,pace,p),muA=p.appMarkup,T=T0*pace;
- let pk=pRef,Q=1,K=1;
- for(let n=0;n<250;n++){
-   const P=c+kappa*pk+muF+muA; Q=Z*Math.pow(P/P0,-p.epsilon); K=kappa*Q+T;
-   const next=v+(pRef-v)*Math.pow(Math.max(K/Math.max(S,1e-9),1e-9),1/Math.max(p.supplyElasticity,.05));
-   if(Math.abs(next-pk)<1e-9){pk=next;break} pk=.65*pk+.35*next;
- }
- const P=c+kappa*pk+muF+muA;Q=Z*Math.pow(P/P0,-p.epsilon);K=kappa*Q+T;
- const H=pk*K,CF=(pk-v)*K;return{t,Z,kappa,muF,muA,T,S,pk,P,Q,K,H,CF};
+const $=id=>document.getElementById(id),clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),fmt=(x,d=1)=>Number.isFinite(x)?Number(x).toFixed(d):'—',signed=x=>(x>=0?'+':'')+fmt(x,1),pct=m=>m.type==='pct';
+let ranges=Object.fromEntries(META.map(m=>[m.key,[...m.range]])),vary=Object.fromEntries(META.map(m=>[m.key,!['discount','economicLife','buildCost','investResponse'].includes(m.key)]));
+function invalidateSweep(){
+ $('sweepResults').classList.add('hidden');
+ $('sweepStatus').textContent='Illustrative triangular parameter draws, not estimated probabilities or confidence intervals. Run again after changing assumptions or ranges.';
 }
-function path(p,pace){
- const c=.25,pRef=.35,T0=p.trainingShare/(1-p.trainingShare),P0=c+pRef+p.frontierMarkup+p.appMarkup;
- let S=1+T0;const rows=[],L=Math.max(1,Math.round(p.economicLife)),annuity=Array.from({length:L},(_,j)=>1/Math.pow(1+p.discount,j+1)).reduce((a,b)=>a+b,0),delta=1/p.economicLife,adjust=.5;
- let invRate=delta;
- for(let t=0;t<=p.horizon;t++){
-   const row=solveYear(p,pace,t,S,P0,T0),unitCF=row.CF/Math.max(S,1e-9),npv=unitCF*annuity-p.buildCost;
-   const targetRate=Math.max(delta+p.investResponse*npv/p.buildCost,0);
-   invRate=(1-adjust)*invRate+adjust*targetRate;
-   const I=invRate*S;Object.assign(row,{npv,I,invRate,targetRate});rows.push(row);S=(1-delta)*S+I;
- }return rows;
-}
-function compare(p){const ref=path(p,1),alt=path(p,p.pace),last=a=>a[a.length-1],sum=(a,k)=>a.reduce((s,x)=>s+x[k],0),chg=(a,b)=>100*(a/b-1);return{ref,alt,summary:{usage:chg(last(alt).Q,last(ref).Q),revenue:chg(last(alt).H,last(ref).H),investment:chg(sum(alt,'I'),sum(ref,'I')),npv:100*(last(alt).npv-last(ref).npv)/p.buildCost,price:chg(last(alt).pk,last(ref).pk)}}}
 function renderControls(){
  $('presets').innerHTML=Object.entries(PRESETS).map(([k,x])=>`<button data-preset="${k}" class="${k===active?'active':''}">${x.label}</button>`).join('');
  document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{const keep={pace:params.pace,horizon:params.horizon};params={...DEF,...PRESETS[b.dataset.preset].p,...keep};active=b.dataset.preset;renderControls();render()});
- for(const g of ['Demand','Pricing','Compute','Investment']){$('group_'+g).innerHTML=META.filter(m=>m.group===g).map(m=>`<div class="control"><div class="control-head"><label>${m.label}</label><div class="entry"><input type="number" data-num="${m.key}" min="${pct(m)?m.min*100:m.min}" max="${pct(m)?m.max*100:m.max}" step="${pct(m)?m.step*100:m.step}" value="${pct(m)?params[m.key]*100:params[m.key]}"><span class="unit">${m.type==='pct'?'%':m.type==='years'?'yr':''}</span></div></div><input type="range" data-range="${m.key}" min="${m.min}" max="${m.max}" step="${m.step}" value="${params[m.key]}"><div class="hint">${m.basis}</div></div>`).join('')}
+ for(const g of ['Demand','Pricing','Compute','Investment']){
+  $('group_'+g).innerHTML=META.filter(m=>m.group===g).map(m=>`<div class="control"><div class="control-head"><label>${m.label}</label><div class="entry"><input aria-label="${m.label}" type="number" data-num="${m.key}" min="${pct(m)?m.min*100:m.min}" max="${pct(m)?m.max*100:m.max}" step="${pct(m)?m.step*100:m.step}" value="${pct(m)?params[m.key]*100:params[m.key]}"><span class="unit">${m.type==='pct'?'%':m.type==='years'?'yr':''}</span></div></div><input aria-label="${m.label} slider" type="range" data-range="${m.key}" min="${m.min}" max="${m.max}" step="${m.step}" value="${params[m.key]}"><div class="hint">${m.basis}</div></div>`).join('');
+ }
  document.querySelectorAll('[data-range]').forEach(el=>el.oninput=()=>{const k=el.dataset.range,m=META.find(x=>x.key===k);params[k]=+el.value;document.querySelector(`[data-num="${k}"]`).value=pct(m)?params[k]*100:params[k];active='';render()});
- document.querySelectorAll('[data-num]').forEach(el=>el.onchange=()=>{const k=el.dataset.num,m=META.find(x=>x.key===k),v=+el.value/(pct(m)?100:1);params[k]=clamp(v,m.min,m.max);active='';renderControls();render()});
+ document.querySelectorAll('[data-num]').forEach(el=>{
+  const update=commit=>{const k=el.dataset.num,m=META.find(x=>x.key===k);let v=el.valueAsNumber/(pct(m)?100:1);
+   if(!Number.isFinite(v)){if(commit)el.value=pct(m)?params[k]*100:params[k];return}
+   if(commit)v=clamp(v,m.min,m.max);else if(v<m.min||v>m.max)return;
+   params[k]=v;document.querySelector(`[data-range="${k}"]`).value=v;active='';if(commit)el.value=pct(m)?v*100:v;render();
+  };el.oninput=()=>update(false);el.onchange=()=>update(true);
+ });
  $('s_pace').value=params.pace;$('n_pace').value=params.pace*100;$('horizon').value=params.horizon;
 }
-function initScenario(){$('s_pace').oninput=()=>{params.pace=+$('s_pace').value;$('n_pace').value=params.pace*100;render()};$('n_pace').onchange=()=>{params.pace=clamp(+$('n_pace').value/100,0,1);$('s_pace').value=params.pace;render()};$('horizon').onchange=()=>{params.horizon=clamp(Math.round(+$('horizon').value),5,15);render()};$('reset').onclick=()=>{params={...DEF};active='baseline';renderControls();render()};$('metricSelect').onchange=drawChart;}
-function render(){result=compare(params);const s=result.summary;$('scenarioLabel').textContent=`${Math.round(params.pace*100)}% pace · ${params.horizon} years`;$('altLegend').textContent=`${Math.round(params.pace*100)}% pace`;const pace=Math.round(params.pace*100),usageWord=s.usage>=0?'higher':'lower',revWord=s.revenue>=0?'higher':'lower',invWord=s.investment>=0?'higher':'lower';$('resultNote').innerHTML=`At <strong>${pace}% frontier pace</strong>, final AI usage is <strong>${Math.abs(s.usage).toFixed(1)}% ${usageWord}</strong> than under continued frontier progress by year ${params.horizon}. Compute-supplier revenue is <strong>${Math.abs(s.revenue).toFixed(1)}% ${revWord}</strong>, and cumulative new investment is <strong>${Math.abs(s.investment).toFixed(1)}% ${invWord}</strong>.`;$('resultSecondary').textContent=`Both scenarios get the same diffusion/adoption growth. Slower frontier progress adds more price pressure by eroding frontier markups, but also gives up some capability-driven demand growth and frontier-training demand. The chart below lets you inspect which effect dominates.`;drawChart()}
-const SPECS={Q:['Final AI usage','Index, initial usage = 100',100],P:['Final AI price','Index, initial price = 100',100],K:['Total compute demand','Index, initial demand = 100',null],pk:['Compute price','Index, initial price = 100',null],H:['Compute-supplier revenue','Index, initial revenue = 100',null],npv:['Unit NPV','Normalized units',1],I:['New investment','Normalized units',1],S:['Effective compute capacity','Normalized units',1],muF:['Frontier markup','Price units',1]};
-function scaled(series,k,scale){if(scale!==null)return series.map(x=>[x.t,x[k]*scale]);const b=series[0][k]||1;return series.map(x=>[x.t,100*x[k]/b])}
-function drawChart(){const k=$('metricSelect').value,sp=SPECS[k],a=scaled(result.ref,k,sp[2]),b=scaled(result.alt,k,sp[2]);$('chartTitle').textContent=sp[0];$('chartSubtitle').textContent=sp[1];let mn=Math.min(0,...a.map(x=>x[1]),...b.map(x=>x[1])),mx=Math.max(...a.map(x=>x[1]),...b.map(x=>x[1]));if(mx-mn<1e-9){mx+=1;mn-=1}mx+=(mx-mn)*.08;const W=860,H=338,L=65,R=20,T=16,B=40,w=W-L-R,h=H-T-B,sx=x=>L+x/params.horizon*w,sy=y=>T+(mx-y)/(mx-mn)*h,path=d=>d.map(([x,y],i)=>(i?'L':'M')+sx(x).toFixed(2)+','+sy(y).toFixed(2)).join(' ');let z='';for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4,y=sy(val);z+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="currentColor" opacity=".12"/><text x="${L-10}" y="${y+4}" text-anchor="end" fill="currentColor" opacity=".62" font-size="11">${fmt(val,1)}</text>`}for(let i=0;i<=5;i++){const val=params.horizon*i/5,x=sx(val);z+=`<text x="${x}" y="${H-14}" text-anchor="middle" fill="currentColor" opacity=".62" font-size="11">${fmt(val,val%1?1:0)}</text>`}z+=`<path d="${path(a)}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="7 5" opacity=".55"/><path d="${path(b)}" fill="none" stroke="currentColor" stroke-width="3"/>`;$('chart').innerHTML=z}
-function buildEvidence(){const n=Object.fromEntries(SOURCES.map((s,i)=>[s.id,i+1]));const refs=m=>m.sources&&m.sources.length?m.sources.map(id=>`<a href="#ref-${id}">[${n[id]}]</a>`).join(' '):'<span class="muted">Model assumption</span>';$('evidenceBody').innerHTML=META.map(m=>`<tr><td><strong>${m.label}</strong></td><td>${m.type==='pct'?Math.round(DEF[m.key]*100)+'%':DEF[m.key]}</td><td><span class="badge">${m.status}</span></td><td>${m.basis}</td><td class="source-ref">${refs(m)}</td></tr>`).join('');$('sources').innerHTML=SOURCES.map((s,i)=>`<li id="ref-${s.id}"><a href="${s.url}" target="_blank" rel="noopener">${s.title} ↗</a> <span class="muted">${s.who}</span><br>${s.text}</li>`).join('')}
-let ranges=Object.fromEntries(META.map(m=>[m.key,[...m.range]])),vary=Object.fromEntries(META.map(m=>[m.key,!['discount','economicLife','buildCost','investResponse'].includes(m.key)]));
-function buildRanges(){$('rangesBody').innerHTML=META.map(m=>`<tr><td><input type="checkbox" data-vary="${m.key}" ${vary[m.key]?'checked':''}></td><td>${m.label}</td><td><input type="number" data-lo="${m.key}" value="${pct(m)?ranges[m.key][0]*100:ranges[m.key][0]}" step="${pct(m)?m.step*100:m.step}"></td><td>${pct(m)?Math.round(params[m.key]*100)+'%':params[m.key]}</td><td><input type="number" data-hi="${m.key}" value="${pct(m)?ranges[m.key][1]*100:ranges[m.key][1]}" step="${pct(m)?m.step*100:m.step}"></td></tr>`).join('');document.querySelectorAll('[data-vary]').forEach(e=>e.onchange=()=>vary[e.dataset.vary]=e.checked);document.querySelectorAll('[data-lo]').forEach(e=>e.onchange=()=>{const m=META.find(x=>x.key===e.dataset.lo);ranges[m.key][0]=+e.value/(pct(m)?100:1)});document.querySelectorAll('[data-hi]').forEach(e=>e.onchange=()=>{const m=META.find(x=>x.key===e.dataset.hi);ranges[m.key][1]=+e.value/(pct(m)?100:1)})}
+function initScenario(){
+ $('s_pace').oninput=()=>{params.pace=+$('s_pace').value;$('n_pace').value=params.pace*100;render()};
+ const paceInput=commit=>{let n=$('n_pace').valueAsNumber;if(!Number.isFinite(n)){if(commit)$('n_pace').value=params.pace*100;return}if(commit)n=clamp(n,0,100);else if(n<0||n>100)return;params.pace=n/100;$('s_pace').value=params.pace;if(commit)$('n_pace').value=n;render()};
+ $('n_pace').oninput=()=>paceInput(false);$('n_pace').onchange=()=>paceInput(true);
+ const horizonInput=commit=>{let n=$('horizon').valueAsNumber;if(!Number.isFinite(n)){if(commit)$('horizon').value=params.horizon;return}if(commit)n=clamp(n,5,15);else if(n<5||n>15)return;params.horizon=Math.round(n);if(commit)$('horizon').value=params.horizon;render()};
+ $('horizon').oninput=()=>horizonInput(false);$('horizon').onchange=()=>horizonInput(true);
+ ['drawCount','seed'].forEach(id=>{$(id).oninput=invalidateSweep;$(id).onchange=invalidateSweep});
+ $('reset').onclick=()=>{params={...DEF};active='baseline';renderControls();render()};$('metricSelect').onchange=drawChart;
+}
+function effect(x){return Math.abs(x)<.05?'essentially unchanged':`${Math.abs(x).toFixed(1)}% ${x>0?'higher':'lower'}`}
+function render(){
+ result=compare(params);const s=result.summary,r=result.ref.at(-1),a=result.alt.at(-1),pace=fmt(params.pace*100,params.pace*100%1?1:0);
+ $('scenarioLabel').textContent=`${pace}% pace · ${params.horizon} years`;$('altLegend').textContent=`${pace}% pace`;
+ $('resultNote').innerHTML=`At <strong>${pace}% frontier pace</strong>, compared with full progress in year ${params.horizon}, total AI usage is <strong>${effect(s.usage)}</strong>. Compute-supplier revenue is <strong>${effect(s.revenue)}</strong>, and cumulative new investment is <strong>${effect(s.investment)}</strong>. Frontier usage is ${effect(s.frontierUsage)}; commodity usage is ${effect(s.commodityUsage)}.`;
+ $('resultSecondary').textContent=`Frontier / commodity prices in year ${params.horizon} are ${fmt(a.PF,3)} / ${fmt(a.PC,3)}, versus ${fmt(r.PF,3)} / ${fmt(r.PC,3)} at full pace (normalized price units). Commodity share among AI users is ${fmt(100*(1-a.frontierShare))}% versus ${fmt(100*(1-r.frontierShare))}% (${signed(s.commodityShareChange)} percentage points). Both scenarios get the same ordinary adoption growth. Capability catch-up favors commodity service, while a lower frontier markup makes frontier service more attractive; the net mix and investment effect depend on the assumptions.`;
+ document.querySelectorAll('[data-preset]').forEach(b=>{b.classList.toggle('active',b.dataset.preset===active);b.setAttribute('aria-pressed',String(b.dataset.preset===active))});
+ document.querySelectorAll('[data-center]').forEach(el=>{const m=META.find(m=>m.key===el.dataset.center);el.textContent=pct(m)?fmt(params[m.key]*100,1)+'%':fmt(params[m.key],2)});
+ invalidateSweep();drawChart();
+}
+const SPECS={
+ Q:['Total AI usage','Units, reference initial total usage = 100',100],QF:['Frontier AI usage','Units, reference initial total usage = 100',100],QC:['Commodity AI usage','Units, reference initial total usage = 100',100],
+ PF:['Frontier service price','Normalized price units',1],PC:['Commodity service price','Normalized price units',1],P:['Average paid service price','Usage-weighted mean; descriptive, not a common price',1],
+ frontierShare:['Frontier share among AI users','Percent of frontier + commodity usage',100],participation:['AI participation','Percent of potential usage opportunities',100],
+ VF:['Frontier capability / value','Value index, initial commodity value = 1',1],VC:['Commodity capability / value','Value index, initial commodity value = 1',1],
+ KI:['Inference compute demand','Index, reference initial inference compute = 100',null],K:['Total compute demand','Index, reference initial total compute = 100',null],
+ pk:['Compute price','Index, reference initial compute price = 100',null],H:['Compute-supplier revenue','Index, reference initial supplier revenue = 100',null],npv:['Unit NPV','Normalized units',1],I:['New investment','Normalized units',1],S:['Effective compute capacity','Normalized units',1],muF:['Frontier markup','Normalized price units',1]
+};
+function scaled(series,k,scale){const factor=scale===null?100/(result.ref[0][k]||1):scale;return series.map(x=>[x.t,x[k]*factor])}
+function drawChart(){
+ const k=$('metricSelect').value,sp=SPECS[k],a=scaled(result.ref,k,sp[2]),b=scaled(result.alt,k,sp[2]);$('chartTitle').textContent=sp[0];$('chartSubtitle').textContent=sp[1];
+ let mn=Math.min(0,...a.map(x=>x[1]),...b.map(x=>x[1])),mx=Math.max(...a.map(x=>x[1]),...b.map(x=>x[1]));if(mx-mn<1e-9){mx+=1;mn-=1}mx+=(mx-mn)*.08;
+ const W=860,H=338,L=65,R=20,T=16,B=40,w=W-L-R,h=H-T-B,sx=x=>L+x/params.horizon*w,sy=y=>T+(mx-y)/(mx-mn)*h,path=d=>d.map(([x,y],i)=>(i?'L':'M')+sx(x).toFixed(2)+','+sy(y).toFixed(2)).join(' ');let z='';
+ for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4,y=sy(val);z+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="currentColor" opacity=".12"/><text x="${L-10}" y="${y+4}" text-anchor="end" fill="currentColor" opacity=".62" font-size="11">${fmt(val,['PF','PC','P','muF'].includes(k)?2:1)}</text>`}
+ for(let i=0;i<=5;i++){const val=params.horizon*i/5,x=sx(val);z+=`<text x="${x}" y="${H-14}" text-anchor="middle" fill="currentColor" opacity=".62" font-size="11">${fmt(val,val%1?1:0)}</text>`}
+ z+=`<path d="${path(a)}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="7 5" opacity=".55"/><path d="${path(b)}" fill="none" stroke="currentColor" stroke-width="3"/>`;$('chart').innerHTML=z;
+}
+function buildEvidence(){
+ const n=Object.fromEntries(SOURCES.map((s,i)=>[s.id,i+1])),refs=m=>m.sources?.length?m.sources.map(id=>`<a href="#ref-${id}">[${n[id]}]</a>`).join(' '):'<span class="muted">Model assumption</span>';
+ $('evidenceBody').innerHTML=META.map(m=>`<tr><td><strong>${m.label}</strong></td><td>${m.type==='pct'?Math.round(DEF[m.key]*100)+'%':DEF[m.key]}</td><td><span class="badge">${m.status}</span></td><td>${m.basis}</td><td class="source-ref">${refs(m)}</td></tr>`).join('');
+ $('sources').innerHTML=SOURCES.map((s,i)=>`<li id="ref-${s.id}"><a href="${s.url}" target="_blank" rel="noopener">${s.title} ↗</a> <span class="muted">${s.who}</span><br>${s.text}</li>`).join('');
+}
+function buildRanges(){
+ $('rangesBody').innerHTML=META.map(m=>{const scale=pct(m)?100:1;return `<tr><td><input aria-label="Vary ${m.label}" type="checkbox" data-vary="${m.key}" ${vary[m.key]?'checked':''}></td><td>${m.label}</td><td><input aria-label="Low ${m.label}" type="number" data-lo="${m.key}" min="${m.min*scale}" max="${m.max*scale}" value="${+fmt(ranges[m.key][0]*scale,6)}" step="${m.step*scale}"></td><td data-center="${m.key}">${pct(m)?fmt(params[m.key]*100,1)+'%':fmt(params[m.key],2)}</td><td><input aria-label="High ${m.label}" type="number" data-hi="${m.key}" min="${m.min*scale}" max="${m.max*scale}" value="${+fmt(ranges[m.key][1]*scale,6)}" step="${m.step*scale}"></td></tr>`}).join('');
+ document.querySelectorAll('[data-vary]').forEach(e=>e.onchange=()=>{vary[e.dataset.vary]=e.checked;invalidateSweep()});
+ for(const side of ['lo','hi'])document.querySelectorAll(`[data-${side}]`).forEach(e=>e.oninput=()=>{const m=META.find(x=>x.key===e.dataset[side]);ranges[m.key][side==='lo'?0:1]=e.valueAsNumber/(pct(m)?100:1);invalidateSweep()});
+}
 function rng(seed){let a=seed>>>0;return()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
-function tri(lo,mode,hi,u){mode=clamp(mode,lo,hi);const f=(mode-lo)/(hi-lo||1);return u<f?lo+Math.sqrt(u*(hi-lo)*(mode-lo)):hi-Math.sqrt((1-u)*(hi-lo)*(hi-mode))}
+function tri(lo,mode,hi,u){if(lo===hi)return lo;mode=clamp(mode,lo,hi);const f=(mode-lo)/(hi-lo);return u<f?lo+Math.sqrt(u*(hi-lo)*(mode-lo)):hi-Math.sqrt((1-u)*(hi-lo)*(hi-mode))}
 function quantile(a,q){a=[...a].sort((x,y)=>x-y);const pos=(a.length-1)*q,l=Math.floor(pos),u=Math.ceil(pos);return a[l]+(a[u]-a[l])*(pos-l)}
-function runSweep(){const n=+$('drawCount').value,random=rng(+$('seed').value),vals=[];for(let i=0;i<n;i++){const p={...params};for(const m of META)if(vary[m.key])p[m.key]=tri(ranges[m.key][0],params[m.key],ranges[m.key][1],random());vals.push(compare(p).summary.investment)}const lower=100*vals.filter(x=>x<0).length/n,higher=100*vals.filter(x=>x>0).length/n;$('sweepResults').classList.remove('hidden');$('sweepResults').innerHTML=`<div class="panel sweep-card"><div class="small muted">Median investment effect</div><div class="big">${signed(quantile(vals,.5))}%</div></div><div class="panel sweep-card"><div class="small muted">10th–90th percentile</div><div class="big">${signed(quantile(vals,.1))}% to ${signed(quantile(vals,.9))}%</div></div><div class="panel sweep-card"><div class="small muted">Draws with lower / higher investment</div><div class="big">${fmt(lower,0)}% / ${fmt(higher,0)}%</div></div>`}
+function runSweep(){
+ for(const m of META)if(vary[m.key]){const [lo,hi]=ranges[m.key];if(!Number.isFinite(lo)||!Number.isFinite(hi)||lo>hi||lo<m.min||hi>m.max){$('sweepStatus').textContent=`Fix the ${m.label} range: low must not exceed high, and both must lie between ${+fmt(m.min*(pct(m)?100:1),6)} and ${+fmt(m.max*(pct(m)?100:1),6)}${pct(m)?'%':''}.`;$('sweepResults').classList.add('hidden');return}}
+ const n=+$('drawCount').value,seed=+$('seed').value,random=rng(seed),vals=[];
+ for(let i=0;i<n;i++){const p={...params};for(const m of META)if(vary[m.key])p[m.key]=tri(ranges[m.key][0],params[m.key],ranges[m.key][1],random());vals.push(compare(p).summary.investment)}
+ const lower=100*vals.filter(x=>x<-1e-9).length/n,higher=100*vals.filter(x=>x>1e-9).length/n,unchanged=100-lower-higher;
+ $('sweepResults').classList.remove('hidden');$('sweepResults').innerHTML=`<div class="panel sweep-card"><div class="small muted">Median investment effect</div><div class="big">${signed(quantile(vals,.5))}%</div></div><div class="panel sweep-card"><div class="small muted">10th–90th percentile</div><div class="big">${signed(quantile(vals,.1))}% to ${signed(quantile(vals,.9))}%</div></div><div class="panel sweep-card"><div class="small muted">Draws with lower / higher investment</div><div class="big">${fmt(lower,0)}% / ${fmt(higher,0)}%</div><div class="small muted">${fmt(unchanged,0)}% unchanged</div></div>`;
+ $('sweepStatus').textContent=`${n} triangular draws · seed ${seed}. Frequencies describe these assumed ranges, not estimated probabilities or confidence intervals.`;
+ return vals;
+}
 $('runSweep').onclick=runSweep;initScenario();renderControls();buildEvidence();buildRanges();render();
 </script>
 </body></html>
