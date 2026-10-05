@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const file=process.argv[2]||path.join(__dirname,'..','index.html');
 const html=fs.readFileSync(file,'utf8'),script=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];
 const context={};vm.createContext(context);
-vm.runInContext(script.slice(0,script.indexOf("$('runSweep').onclick"))+';globalThis.api={DEF,META,PRESETS,COST,normalization,choiceShares,demandAtPrice,catchupRate,muFrontier,path,compare,rng,tri};',context);
+vm.runInContext(script.slice(0,script.indexOf("$('runSweep').onclick"))+';globalThis.api={DEF,META,PRESETS,COST,normalization,choiceShares,demandAtPrice,catchupRate,muFrontier,path,compare,cumulativeInvestment,chartAxis,chartTick,investmentNote,rng,tri};',context);
 const a=context.api;let checks=0;
 function near(x,y,tol=1e-8){checks++;assert.ok(Math.abs(x-y)<=tol*Math.max(1,Math.abs(x),Math.abs(y)),`${x} != ${y}`)}
 function verify(p){
@@ -24,6 +24,8 @@ function verify(p){
   }
  }
  result.ref.forEach((r,t)=>near(r.M,result.alt[t].M));
+ const cumulative=rows=>rows.slice(0,p.horizon).reduce((sum,r)=>sum+r.I,0);
+ near(result.summary.investment,100*(cumulative(result.alt)/cumulative(result.ref)-1));
  for(const v of Object.values(result.summary)){checks++;assert.ok(Number.isFinite(v))}
  return result;
 }
@@ -47,4 +49,15 @@ const random=a.rng(731),corners=['min','max'];
 for(const edge of corners){const p={...a.DEF,horizon:15};for(const m of a.META)p[m.key]=m[edge];verify(p)}
 for(let draw=0;draw<150;draw++){const p={...a.DEF,pace:random(),horizon:5+Math.floor(random()*11)};for(const m of a.META)p[m.key]=m.min+random()*(m.max-m.min);verify(p)}
 for(const m of a.META){const sample=a.tri(m.range[0],a.DEF[m.key],m.range[1],.42);checks++;assert.ok(sample>=m.range[0]&&sample<=m.range[1])}
+// Endpoint annual flows belong to the following year, not the stated horizon.
+const flows=[{t:0,I:1},{t:1,I:10},{t:2,I:100},{t:3,I:1000}];
+near(a.cumulativeInvestment(flows,1),1);near(a.cumulativeInvestment(flows,3),111);
+for(const [min,max] of [[0,.468],[0,.04],[-.244,.136],[0,1e8],[0,0]]){
+ const axis=a.chartAxis(min,max);checks+=3;
+ assert.ok(axis.min<=min&&axis.max>=max);
+ assert.ok(axis.ticks.length>=2&&axis.ticks.length<=8);
+ const labels=Array.from(axis.ticks,v=>a.chartTick(v,axis));assert.equal(new Set(labels).size,labels.length);
+}
+checks+=2;assert.ok(a.investmentNote({...a.DEF,...a.PRESETS.risk.p},negative).includes('approximately cancel'));
+assert.ok(!a.investmentNote({...a.DEF,pace:1},identical).includes('training demand falls'));
 console.log(JSON.stringify({checks,random_parameter_cases:150,affordability_investment_percent:positive.summary.investment,frontier_dependence_investment_percent:negative.summary.investment,frontier_dependence_commodity_share_pp:negative.summary.commodityShareChange},null,2));

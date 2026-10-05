@@ -69,7 +69,7 @@ window.MathJax = {
 <div class="section-label"><span class="eyebrow">Alternative vs. 100% pace</span><span class="muted" id="scenarioLabel"></span></div>
 <section class="result-reading"><h3>What the current assumptions imply</h3><p id="resultNote"></p><p class="result-secondary" id="resultSecondary"></p></section>
 <div class="chart-head"><div><h3 id="chartTitle">New investment</h3><p class="small muted" id="chartSubtitle">Normalized units</p></div><select id="metricSelect" aria-label="Chart metric"><option value="Q">Total AI usage</option><option value="QF">Frontier AI usage</option><option value="QC">Commodity AI usage</option><option value="PF">Frontier service price</option><option value="PC">Commodity service price</option><option value="P">Average paid service price</option><option value="frontierShare">Frontier share among AI users</option><option value="participation">AI participation</option><option value="VF">Frontier capability / value</option><option value="VC">Commodity capability / value</option><option value="KI">Inference compute demand</option><option value="K">Total compute demand</option><option value="pk">Compute price</option><option value="H">Compute-supplier revenue</option><option value="npv">Unit NPV</option><option value="I" selected>New investment</option><option value="S">Effective compute capacity</option><option value="muF">Frontier markup</option></select></div>
-<div class="legend"><span><i class="dash"></i>100% pace</span><span><i></i><span id="altLegend">50% pace</span></span></div><svg id="chart" class="chart" viewBox="0 0 860 338"></svg><div class="chart-foot">Annual steps · normalized real units</div>
+<div class="legend"><span><i class="dash"></i>100% pace</span><span><i></i><span id="altLegend">50% pace</span></span></div><svg id="chart" class="chart" viewBox="0 0 860 338" role="img" aria-label="Scenario comparison chart"></svg><div class="chart-foot" id="chartFoot"></div><p class="small muted" id="chartNote"></p>
 </div></div>
 
 <div class="notebook-cell inputs-cell">
@@ -138,6 +138,8 @@ window.MathJax = {
 <div class="eq">\[\widehat\iota_t=\max\!\left(\delta+\alpha\frac{NPV_t}{b},0\right),\quad\iota_t=\tfrac12\iota_{t-1}+\tfrac12\widehat\iota_t,\quad I_t=\iota_tS_t,\]</div>
 <div class="eq">\[S_{t+1}=(1-\delta)S_t+I_t,\qquad\delta=1/L,\qquad\iota_{-1}=\delta.\]</div>
 <p><strong>\(\alpha\)</strong> is investment response and <strong>\(\iota\)</strong> is the gradually adjusting investment rate. The capacity, cash-flow, NPV, depreciation, and investment rules are unchanged. Economic life determines the annuity's rounded number of years; depreciation uses the unrounded life control.</p>
+<p><strong>Timing and transition:</strong> time zero is when frontier pace changes. Both scenarios inherit the same capacity and initial investment rate. Training demand changes immediately to \(gT_0\), while installed capacity adjusts through investment and retirement. This can create an initial drop in returns and investment, followed by a recovery as capacity retires; gradual adjustment can overshoot. These annual paths are transition dynamics, not a prediction that investment must rise smoothly. Investment includes replacement of retiring capacity; net capacity addition is \(I_t-\delta S_t\).</p>
+<p>For an \(n\)-year horizon, cumulative investment is \(\sum_{t=0}^{n-1}I_t\). The chart also shows the annual flow at \(t=n\), which starts the next year and is excluded from that cumulative total. Total usage, tier shares, and revenue comparisons use the endpoint \(t=n\). Ordinary adoption increases opportunities, while efficiency reduces compute per use: before changes in participation and tier mix, inference compute grows by \((1+g_D)(1-e)\) per year. For example, 25% adoption growth and 20% efficiency improvement give \(1.25\times0.8=1\); more usage need not imply growing compute investment.</p>
 <p class="model-lead">Pacing can raise or lower compute investment. Faster catch-up and cheaper services can increase participation or shift usage toward commodity AI. Lower frontier value growth, reduced training demand, and lower commodity compute intensity can weaken compute demand. Frontier price compression can also attract users back to the frontier tier. These competing channels determine compute scarcity, supplier cash flow, NPV, and investment; no investment sign or final tier share is imposed.</p>
 
 </div>
@@ -203,9 +205,10 @@ function path(p,pace){
  }
  return rows;
 }
+function cumulativeInvestment(rows,horizon){return rows.filter(r=>r.t<horizon).reduce((sum,r)=>sum+r.I,0)}
 function compare(p){
- const ref=path(p,1),alt=path(p,p.pace),last=a=>a[a.length-1],sum=(a,k)=>a.reduce((s,x)=>s+x[k],0),chg=(a,b)=>100*(a/b-1);
- return {ref,alt,summary:{usage:chg(last(alt).Q,last(ref).Q),frontierUsage:chg(last(alt).QF,last(ref).QF),commodityUsage:chg(last(alt).QC,last(ref).QC),revenue:chg(last(alt).H,last(ref).H),investment:chg(sum(alt,'I'),sum(ref,'I')),npv:100*(last(alt).npv-last(ref).npv)/p.buildCost,price:chg(last(alt).pk,last(ref).pk),commodityShareChange:100*(last(ref).frontierShare-last(alt).frontierShare)}};
+ const ref=path(p,1),alt=path(p,p.pace),last=a=>a[a.length-1],chg=(a,b)=>100*(a/b-1);
+ return {ref,alt,summary:{usage:chg(last(alt).Q,last(ref).Q),frontierUsage:chg(last(alt).QF,last(ref).QF),commodityUsage:chg(last(alt).QC,last(ref).QC),revenue:chg(last(alt).H,last(ref).H),investment:chg(cumulativeInvestment(alt,p.horizon),cumulativeInvestment(ref,p.horizon)),npv:100*(last(alt).npv-last(ref).npv)/p.buildCost,price:chg(last(alt).pk,last(ref).pk),commodityShareChange:100*(last(ref).frontierShare-last(alt).frontierShare)}};
 }
 
 const META=[
@@ -288,16 +291,34 @@ const SPECS={
  frontierShare:['Frontier share among AI users','Percent of frontier + commodity usage',100],participation:['AI participation','Percent of potential usage opportunities',100],
  VF:['Frontier capability / value','Value index, initial commodity value = 1',1],VC:['Commodity capability / value','Value index, initial commodity value = 1',1],
  KI:['Inference compute demand','Index, reference initial inference compute = 100',null],K:['Total compute demand','Index, reference initial total compute = 100',null],
- pk:['Compute price','Index, reference initial compute price = 100',null],H:['Compute-supplier revenue','Index, reference initial supplier revenue = 100',null],npv:['Unit NPV','Normalized units',1],I:['New investment','Normalized units',1],S:['Effective compute capacity','Normalized units',1],muF:['Frontier markup','Normalized price units',1]
+ pk:['Compute price','Index, reference initial compute price = 100',null],H:['Compute-supplier revenue','Index, reference initial supplier revenue = 100',null],npv:['Unit NPV','Normalized units',1],I:['New investment','Annual flow, normalized units; includes replacement',1],S:['Effective compute capacity','Normalized units',1],muF:['Frontier markup','Normalized price units',1]
 };
 function scaled(series,k,scale){const factor=scale===null?100/(result.ref[0][k]||1):scale;return series.map(x=>[x.t,x[k]*factor])}
+function chartAxis(min,max){
+ if(max-min<1e-9){min-=1;max+=1}
+ const rough=(max-min)/5,magnitude=10**Math.floor(Math.log10(rough)),step=[1,2,2.5,5,10].find(x=>x*magnitude>=rough)*magnitude;
+ const lo=Math.floor(min/step)*step,hi=Math.ceil(max/step)*step;
+ let decimals=0;while(decimals<8&&Math.abs(step*10**decimals-Math.round(step*10**decimals))>1e-7)decimals++;
+ const ticks=Array.from({length:Math.round((hi-lo)/step)+1},(_,i)=>lo+i*step);
+ return {min:lo,max:hi,step,decimals,ticks};
+}
+function chartTick(value,axis){return Math.abs(value)>=1e6?value.toExponential(1):fmt(Math.abs(value)<axis.step*1e-8?0:value,axis.decimals)}
+function investmentNote(p,r){
+ const annualComputeGrowth=100*((1+p.diffusionGrowth)*(1-p.efficiency)-1),trainingCut=100*(1-p.pace);
+ const shock=p.trainingShare>0&&p.pace<1?`At time zero, training demand falls by ${fmt(trainingCut,1)}% while installed capacity is initially unchanged. Investment can fall, then recover as capacity retires and compute returns improve. `:'';
+ const growth=`Adoption and efficiency together imply ${fmt(annualComputeGrowth,1)}% annual inference-compute growth before changes in participation and tier mix${Math.abs(annualComputeGrowth)<.05?'; their effects approximately cancel':''}. `;
+ return shock+growth+`Cumulative investment over ${p.horizon} years is ${fmt(cumulativeInvestment(r.alt,p.horizon),3)} at your pace versus ${fmt(cumulativeInvestment(r.ref,p.horizon),3)} at full pace. It excludes the year-${p.horizon} flow, which starts the next year.`;
+}
 function drawChart(){
  const k=$('metricSelect').value,sp=SPECS[k],a=scaled(result.ref,k,sp[2]),b=scaled(result.alt,k,sp[2]);$('chartTitle').textContent=sp[0];$('chartSubtitle').textContent=sp[1];
- let mn=Math.min(0,...a.map(x=>x[1]),...b.map(x=>x[1])),mx=Math.max(...a.map(x=>x[1]),...b.map(x=>x[1]));if(mx-mn<1e-9){mx+=1;mn-=1}mx+=(mx-mn)*.08;
+ const axis=chartAxis(Math.min(0,...a.map(x=>x[1]),...b.map(x=>x[1])),Math.max(...a.map(x=>x[1]),...b.map(x=>x[1]))),mn=axis.min,mx=axis.max;
  const W=860,H=338,L=65,R=20,T=16,B=40,w=W-L-R,h=H-T-B,sx=x=>L+x/params.horizon*w,sy=y=>T+(mx-y)/(mx-mn)*h,path=d=>d.map(([x,y],i)=>(i?'L':'M')+sx(x).toFixed(2)+','+sy(y).toFixed(2)).join(' ');let z='';
- for(let i=0;i<=4;i++){const val=mn+(mx-mn)*i/4,y=sy(val);z+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="currentColor" opacity=".12"/><text x="${L-10}" y="${y+4}" text-anchor="end" fill="currentColor" opacity=".62" font-size="11">${fmt(val,['PF','PC','P','muF'].includes(k)?2:1)}</text>`}
+ for(const val of axis.ticks){const y=sy(val);z+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="currentColor" opacity=".12"/><text x="${L-10}" y="${y+4}" text-anchor="end" fill="currentColor" opacity=".62" font-size="11">${chartTick(val,axis)}</text>`}
  for(let i=0;i<=5;i++){const val=params.horizon*i/5,x=sx(val);z+=`<text x="${x}" y="${H-14}" text-anchor="middle" fill="currentColor" opacity=".62" font-size="11">${fmt(val,val%1?1:0)}</text>`}
  z+=`<path d="${path(a)}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="7 5" opacity=".55"/><path d="${path(b)}" fill="none" stroke="currentColor" stroke-width="3"/>`;$('chart').innerHTML=z;
+ $('chartFoot').textContent='Years since the pace change · annual observations';
+ $('chartNote').textContent=k==='I'?investmentNote(params,result):'';
+ $('chart').setAttribute('aria-label',`${sp[0]}: full frontier pace compared with ${fmt(params.pace*100,1)}% pace over ${params.horizon} years. ${sp[1]}.`);
 }
 function buildEvidence(){
  const n=Object.fromEntries(SOURCES.map((s,i)=>[s.id,i+1])),refs=m=>m.sources?.length?m.sources.map(id=>`<a href="#ref-${id}">[${n[id]}]</a>`).join(' '):'<span class="muted">Model assumption</span>';

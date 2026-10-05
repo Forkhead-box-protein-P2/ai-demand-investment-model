@@ -20,6 +20,8 @@ The site began with the downloaded `ai_compute_lab.html` from October 4, 2026. I
 
 The report documents all equations, normalization, and assumptions. Presets are illustrative, and sensitivity frequencies describe assumed parameter ranges rather than estimated probabilities. Pacing can increase or decrease investment.
 
+Time zero is the pace change: training demand changes immediately, while installed capacity is inherited from the full-pace reference. Investment and retirement adjust capacity afterward, so annual investment can dip, recover, and overshoot. Investment includes replacement of retiring capacity. An N-year cumulative result includes flows beginning at years 0 through N−1; the chart's year-N flow starts the following year and is excluded. Adoption growth and falling compute per use can offset each other, yielding a nearly flat compute-investment path even as AI usage rises.
+
 ## Validate changes
 
 Run `node tests/model.test.cjs` with Node.js. The suite checks tier sorting, the outside option, normalization, equilibrium residuals, compute accounting, capacity dynamics, continuous pace, parameter boundaries, and investment effects of both signs across randomized cases. Browser verification also covers controls, chart selection, presets, sensitivity sampling, equation rendering, and responsive layout.
