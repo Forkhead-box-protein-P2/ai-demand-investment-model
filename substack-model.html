@@ -16,15 +16,14 @@ iframe{display:block;width:100%;height:560px;border:0}
 <script>
 const model = document.getElementById('model');
 let pending = false;
-let lastHeight = 0;
 function reportHeight() {
   pending = false;
   const body = model.contentDocument?.body;
   if (!body) return;
   const height = Math.min(100000, Math.max(560, Math.ceil(body.getBoundingClientRect().height)));
-  if (height === lastHeight) return;
-  lastHeight = height;
-  model.style.height = `${height}px`;
+  // Retain scrolling when a host does not run the Datawrapper resize listener.
+  const visibleHeight = window.parent === window ? height : Math.min(height, window.innerHeight);
+  model.style.height = `${visibleHeight}px`;
   window.parent.postMessage({'datawrapper-height': {'kNH4n': height}}, '*');
 }
 function scheduleHeight() {
@@ -43,6 +42,8 @@ model.addEventListener('load', () => {
   doc.addEventListener('toggle', scheduleHeight, true);
   doc.fonts?.ready.then(scheduleHeight);
   scheduleHeight();
+  // Some hosts install their listener after inserting the embed.
+  [250, 1000, 3000].forEach(delay => setTimeout(scheduleHeight, delay));
 });
 window.addEventListener('resize', scheduleHeight);
 </script>
