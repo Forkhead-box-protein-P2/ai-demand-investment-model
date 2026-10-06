@@ -5,13 +5,46 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI Demand, Compute Pricing, and Investment</title>
 <style>
-html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#f5f4ef}
-iframe{display:block;width:100%;height:100%;border:0}
+html,body{width:100%;margin:0;overflow:hidden;background:#f5f4ef}
+iframe{display:block;width:100%;height:560px;border:0}
 </style>
 </head>
 <body>
-<!-- A nested scrolling frame keeps the canonical model usable when the host
-     disables scrolling on its outer embed. No model code is duplicated. -->
-<iframe src="./index.html#explore" title="AI demand, compute pricing, and investment model" scrolling="auto"></iframe>
+<!-- Display the canonical model and report its content height to the host's
+     Datawrapper embed listener. No model code is duplicated. -->
+<iframe id="model" src="./index.html" title="AI demand, compute pricing, and investment model" scrolling="auto"></iframe>
+<script>
+const model = document.getElementById('model');
+let pending = false;
+let lastHeight = 0;
+function reportHeight() {
+  pending = false;
+  const body = model.contentDocument?.body;
+  if (!body) return;
+  const height = Math.min(100000, Math.max(560, Math.ceil(body.getBoundingClientRect().height)));
+  if (height === lastHeight) return;
+  lastHeight = height;
+  model.style.height = `${height}px`;
+  window.parent.postMessage({'datawrapper-height': {'kNH4n': height}}, '*');
+}
+function scheduleHeight() {
+  if (!pending) {
+    pending = true;
+    requestAnimationFrame(reportHeight);
+  }
+}
+model.addEventListener('load', () => {
+  const doc = model.contentDocument;
+  const style = doc.createElement('style');
+  // A viewport-height minimum would grow recursively as the iframe expands.
+  style.textContent = '#sensitivity{min-height:0!important}';
+  doc.head.append(style);
+  new ResizeObserver(scheduleHeight).observe(doc.body);
+  doc.addEventListener('toggle', scheduleHeight, true);
+  doc.fonts?.ready.then(scheduleHeight);
+  scheduleHeight();
+});
+window.addEventListener('resize', scheduleHeight);
+</script>
 </body>
 </html>
